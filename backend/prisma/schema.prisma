@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id					Int			@id @default(autoincrement())
+  username				String		@unique
+  email					String		@unique
+  passwordHash			String
+  avatarUrl				String?
+  isTwoFactorEnabled	Boolean		@default(false)
+  twoFactorSecret		String?
+  twoFactorEnabled		Boolean		@default(false)
+  twoFactorEnabledAt	DateTime?
+  createdAt				DateTime	@default(now())
+  matchesAsPlayer1		Match[]		@relation("Player1")
+  matchesAsPlayer2		Match[]		@relation("Player2")
+  friends				User[]		@relation("UserFriends")
+  friendOf				User[]		@relation("UserFriends")
+}
+
+model Match {
+  id					Int			@id @default(autoincrement())
+  player1				User		@relation("Player1", fields: [player1Id], references: [id])
+  player1Id				Int
+  player2				User		@relation("Player2", fields: [player2Id], references: [id])
+  player2Id				Int
+  score1				Int
+  score2				Int
+  winnerId				Int      // FK vers User.id (le gagnant)
+  playedAt				DateTime	@default(now())
+}

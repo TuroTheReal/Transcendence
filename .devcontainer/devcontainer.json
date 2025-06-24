@@ -1,18 +1,19 @@
 {
-  "name": "transcendence-dev",
+  "name": "transcendence cont",
   "dockerComposeFile": "docker-compose.yml",
   "service": "dev",
   "workspaceFolder": "/app",
-  "profiles": ["dev"],
+  "shutdownAction": "stopCompose",
   "customizations": {
     "vscode": {
       "extensions": [
+        "ms-vscode.vscode-typescript-next",
+        "bradlc.vscode-tailwindcss",
         "esbenp.prettier-vscode",
         "dbaeumer.vscode-eslint"
       ]
     }
   },
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/app,type=bind"
-  ]
+  "forwardPorts": [3000, 5173],
+  "postCreateCommand": "npm install"
 }
