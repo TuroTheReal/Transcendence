@@ -1,4 +1,4 @@
-import { UserSignUpCheck } from '../../backend/src/signup/signUpCheck.ts';
+// import { UserSignUpCheck } from '../../backend/src/signup/signUpCheck.ts';
 
 export function createSignUpPage(): HTMLElement{
 	const page = document.createElement('div');

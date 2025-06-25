@@ -14,6 +14,16 @@
       ]
     }
   },
-  "forwardPorts": [3000, 5173],
+  "forwardPorts": [3000, 5174],
+  "portsAttributes": {
+    "3000": {
+      "label": "Backend/Frontend",
+      "onAutoForward": "notify"
+    },
+    "5174": {
+      "label": "Vite Dev Server",
+      "onAutoForward": "notify"
+    }
+  },
   "postCreateCommand": "npm install"
 }
