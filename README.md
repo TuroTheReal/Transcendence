@@ -33,8 +33,26 @@ Devops : 15
 - Minor module: Monitoring system. // Arthur
 
 Accessibility : 10
-- Minor module: Supports multiple languages. 
+- Minor module: Supports multiple languages.
 - Minor module: Server-Side Rendering (SSR) integration. // Jojo
 
 
-npm install to install all dependencies/librairies
+*****************************
+
+		FROM ARTHUR
+
+To run the docker:
+
+- Download "Dev Container" from Microsoft on Vs Code
+- Make sure your port 3000 is free
+- Inside VsCode, ctrl shift P to open menu & type Dev Container, (rebuild) reopen in container.
+
+- Now you inside the container, BE CAREFUL WITH THIS, every you will do inside your container
+	is also done in your repo on your computer, its a bind mount so make sure what you do.
+	For exemple load 2 VsCode, connect one with the container & open another one in VsCode via
+	your folder, everything you type in VsCode will appear in the other one.
+
+- To run server: npm run dev
+
+- Run the script if you want to reset docker images & containers, be aware, thihs script will remove
+	all the Docker environment.

@@ -1,7 +1,7 @@
 {
   "name": "transcendence cont",
   "dockerComposeFile": "docker-compose.yml",
-  "service": "dev",
+  "service": "prod",
   "workspaceFolder": "/app",
   "shutdownAction": "stopCompose",
   "customizations": {
@@ -24,6 +24,6 @@
       "label": "Vite Dev Server",
       "onAutoForward": "notify"
     }
-  },
-  "postCreateCommand": "npm install"
+  }
+//   "postCreateCommand": "npm install"
 }
