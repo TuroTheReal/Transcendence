@@ -32,10 +32,11 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "dev:backend": "cd backend && tsc && node dist/server.js",
-    "dev:frontend": "cd frontend && vite --host",
+    "dev:frontend": "cd frontend/src && vite --host",
     "build": "npm run build:frontend && npm run build:backend",
+	"build:prod": "npm run build:frontend && npm run build:backend",
     "build:backend": "cd backend && tsc",
-    "build:frontend": "cd frontend && vite build",
+    "build:frontend": "cd frontend/src && vite build",
     "start": "cd backend && node dist/server.js"
   },
   "keywords": [],

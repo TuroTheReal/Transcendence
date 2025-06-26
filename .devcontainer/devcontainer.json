@@ -1,9 +1,9 @@
 {
   "name": "transcendence cont",
   "dockerComposeFile": "docker-compose.yml",
-  "service": "prod",
+  "service": "dev",
   "workspaceFolder": "/app",
-  "shutdownAction": "stopCompose",
+//   "shutdownAction": "stopCompose",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -14,7 +14,7 @@
       ]
     }
   },
-  "forwardPorts": [3000, 5174],
+  "forwardPorts": [3000, 5173],
   "portsAttributes": {
     "3000": {
       "label": "Backend/Frontend",

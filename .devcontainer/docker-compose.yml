@@ -1,34 +1,30 @@
 services:
   dev:
+    container_name: trans-dev
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
       target: dev
+    ports:
+      - "3000:3000"
+      - "5173:5173"
     volumes:
       - ..:/app
       - /app/node_modules
-    # ports:
-    # - "3000:3000"
-    # - "5173:5173"
-    command: ["npm", "run", "dev"]
     environment:
       - NODE_ENV=development
-    # profiles:
-    #   - dev
+      - DEBUG=true
+    image: dev
+    restart: unless-stopped
 
   prod:
+    container_name: trans-prod
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
       target: prod
-    volumes:
-      - ..:/app
-      - /app/node_modules
     ports:
     - "3000:3000"
-    - "5173:5173"
-    command: ["node", "dist/index.js"]
     environment:
       - NODE_ENV=development
-    # profiles:
-    #   - prod
+    image: prod
