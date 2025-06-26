@@ -32,8 +32,7 @@ COPY . .
 
 RUN npm run build:prod
 
-RUN rm -rf src/ && \
-    rm -rf public/ && \
+RUN rm -rf backend/src/ && \
     rm -rf *.config.js && \
     rm -rf tsconfig.json && \
     rm -rf node_modules && \
