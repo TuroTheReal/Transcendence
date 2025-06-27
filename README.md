@@ -56,3 +56,5 @@ To run the docker:
 
 - Run the script if you want to reset docker images & containers, be aware, thihs script will remove
 	all the Docker environment.
+
+- If you dont want to user Dev Container, just uncomment the Ports inside the dockerfile & 'docker-compose up dev'
