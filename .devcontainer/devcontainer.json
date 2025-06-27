@@ -3,7 +3,6 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "dev",
   "workspaceFolder": "/app",
-//   "shutdownAction": "stopCompose",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -25,5 +24,4 @@
       "onAutoForward": "notify"
     }
   }
-//   "postCreateCommand": "npm install"
 }
