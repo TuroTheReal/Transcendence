@@ -3,6 +3,7 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "dev",
   "workspaceFolder": "/app",
+  "shutdownAction": "stopCompose",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -13,14 +14,18 @@
       ]
     }
   },
-  "forwardPorts": [3000, 5173],
+  "forwardPorts": [3000, 5173, 5555],
   "portsAttributes": {
     "3000": {
       "label": "Backend/Frontend",
       "onAutoForward": "notify"
     },
-    "5174": {
+    "5173": {
       "label": "Vite Dev Server",
+      "onAutoForward": "notify"
+    },
+    "5555": {
+      "label": "DB main board",
       "onAutoForward": "notify"
     }
   }

@@ -13,15 +13,19 @@ RUN npm install
 
 COPY . .
 
-CMD ["bash", "-c", "exec npm run dev"]
-
 EXPOSE 3000 5173
+
+CMD ["bash", "-c", "exec npm run dev"]
 
 
 # FOR PROD
 FROM node:22-slim AS prod
 
 WORKDIR /app
+
+RUN apt-get update && \
+    apt-get install -y openssl && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 
@@ -30,11 +34,11 @@ RUN npm ci && \
 
 COPY . .
 
-RUN npm run build:prod
+RUN npm run build
 
 RUN rm -rf backend/src/ && \
     rm -rf *.config.js && \
-    rm -rf tsconfig.json && \
+    rm -rf backend/tsconfig.json && \
     rm -rf node_modules && \
     npm ci --only=production
 

@@ -14,6 +14,10 @@ function isPasswordString(user : IUserInfo): boolean {
 	return typeof user.password === "string";
 };
 
+function isUsernameAllowed(user : IUserInfo): boolean {
+	return user.password !== "admin";
+};
+
 function isPasswordLong(user : IUserInfo): boolean {
 	return user.password.length >= 5;
 };
@@ -29,6 +33,10 @@ function UserSignUpCheck(user : IUserInfo): boolean {
 	}
 	if (!isPasswordString(user)) {
 		alert("Password must be a string");
+		return false;
+	}
+	if (!isUsernameAllowed(user)) {
+		alert("Username must not be admin");
 		return false;
 	}
 	if (!isPasswordLong(user)) {

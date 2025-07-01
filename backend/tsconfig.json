@@ -9,7 +9,11 @@
       "esModuleInterop": true,
       "allowSyntheticDefaultImports": true,
       "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true
+      "forceConsistentCasingInFileNames": true,
+      "typeRoots": [
+      	"./node_modules/@types",
+      	"./types"
+    ]
   },
   "include": ["src/**/*"],
   "exclude": ["prisma", "dist"]
