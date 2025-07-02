@@ -40,8 +40,8 @@ export async function registerProfileRoute(app: FastifyInstance, prisma: PrismaC
 			reply.status(400).send({ error: "Username is required" });
 			return;
 		}
-		const avatarUrl = updateAvatar(prisma, username, file.file);
-		reply.status(200).send({ success: true, avatarUrl});
+		const avatarPath = await updateAvatar(prisma, username, file.file);
+		reply.status(200).send({ success: true, avatarPath});
 	});
 
 	// HANDLE USERNAME REQUEST
@@ -105,16 +105,47 @@ async function updatePassword(prisma: PrismaClient, username: string, newPasswor
 		});
 }
 
-async function updateAvatar(prisma: PrismaClient, username: string, file: any) {
-	const uploadPath = path.join(PROJECT_ROOT, "./public/avatars", `${username}.png`);
+// async function updateAvatar(prisma: PrismaClient, username: string, file: any): Promise<string> {
+// 	const uploadPath = path.join(PROJECT_ROOT, "./public/avatars", `${username}.png`);
+// 	console.log("uploadPath: ", uploadPath);
+// 	await pipeline(file, fs.createWriteStream(uploadPath));
+// 	if (fs.existsSync(uploadPath)) {
+// 		console.log("✅ Fichier sauvegardé avec succès");
+// 		const stats = fs.statSync(uploadPath);
+// 		console.log("📁 Taille du fichier:", stats.size, "bytes");
+// 	} else {
+// 		console.log("❌ Fichier non trouvé après sauvegarde");
+// 	}
+// 	const avatarPath = `/avatars/${username}.png`;
+// 	console.log("avatarPath: ", avatarPath);
+
+// 	await prisma.user.update({
+// 		where: { username },
+// 		data: { avatarUrl: avatarPath }
+// 	});
+// 	return avatarPath;
+// }
+
+async function updateAvatar(prisma: PrismaClient, username: string, file: any): Promise<string> {
+	const fileExtension = path.extname(file.filename) || '.png';
+	const uploadPath = path.join(PROJECT_ROOT, "./public/avatars", `${username}${fileExtension}`);
 	console.log("uploadPath: ", uploadPath);
+
 	await pipeline(file, fs.createWriteStream(uploadPath));
-	const avatarUrl = `/avatars/${username}.png`;
-	console.log("avatarUrl: ", avatarUrl);
+
+	if (fs.existsSync(uploadPath)) {
+		console.log("✅ Fichier sauvegardé avec succès");
+		const stats = fs.statSync(uploadPath);
+		console.log("📁 Taille du fichier:", stats.size, "bytes");
+	}
+
+	// 🔥 CHANGEMENT : Le chemin doit correspondre à la configuration static
+	const avatarPath = `/public/avatars/${username}${fileExtension}`;
+	console.log("avatarPath: ", avatarPath);
 
 	await prisma.user.update({
 		where: { username },
-		data: { avatarUrl: avatarUrl }
+		data: { avatarUrl: avatarPath }
 	});
-	return avatarUrl;
+	return avatarPath;
 }

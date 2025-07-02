@@ -4,7 +4,7 @@ FROM node:22-slim AS dev
 WORKDIR /app
 
 RUN apt-get update && \
-apt-get install -y bash git curl procps && \
+apt-get install -y bash git curl procps lsof && \
 rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./

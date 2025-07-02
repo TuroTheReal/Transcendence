@@ -24,6 +24,8 @@ async function fillUserInArray(parts: AsyncIterableIterator<Multipart>, reply: F
 		const usernameValue = fields.username;
 		const passwordValue = fields.password;
 
+		console.log("usernameValue: ", usernameValue);
+		console.log("passwordValue: ", passwordValue);
 		if (!usernameValue || !passwordValue){
 			reply.code(400).send({ error: "Invalid user info: missing username or password." });
 			return null;
@@ -40,10 +42,12 @@ async function saveAvatar(avatarFile: any, username: string): Promise<string> {
 	}
 	const uploadPath = path.join(avatarsDir, `${username}.png`);
 	await pipeline(avatarFile.file, fs.createWriteStream(uploadPath));
-	return `/avatars/${username}.png`;
+	return `./public/avatars/${username}.png`;
 }
 
 async function createUser(prisma: PrismaClient, username: string, hashedPassword: string, avatarPath: string) {
+	console.log("About to create new user");
+	console.log("avatarUrl: ", avatarPath);
 	return await prisma.user.create({
 		data: {
 			username,
@@ -59,6 +63,7 @@ export async function registerNewUser(app: FastifyInstance, prisma: PrismaClient
 	app.post('/api/signup', async (request, reply) => {
 		const parts = request.parts();
 		const userData = await fillUserInArray(parts, reply);
+		console.log("userdata: ", userData);
 		if (!userData) return;
 
 		const { usernameValue, passwordValue, hashedPassword, avatarFile } = userData;

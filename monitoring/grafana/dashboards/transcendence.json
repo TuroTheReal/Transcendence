@@ -1,0 +1,17 @@
+{
+  "dashboard": {
+    "title": "Transcendence Monitoring",
+    "panels": [
+      {
+        "title": "HTTP Requests",
+        "type": "stat",
+        "targets": [{"expr": "http_requests_total"}]
+      },
+      {
+        "title": "Response Time",
+        "type": "graph",
+        "targets": [{"expr": "http_requests_duration_seconds"}]
+      }
+    ]
+  }
+}

@@ -7,6 +7,9 @@ export function createSignUpPage(): HTMLElement {
 
 	page.innerHTML = `
 		<div class="card max-w-md w-full bg-white flex flex-col items-center">
+			<header class="w-full flex items-center gap-4 mb-6">
+				<button class="btn" data-route="/login">← Return to login</button>
+			</header>
 			<h1 class="text-4xl font-bold text-center text-red-500 mb-8">Create your account</h1>
 			<form class="space-y-4 w-full">
 				<input type="text" placeholder="Username" id="username" required class="input">
@@ -20,6 +23,16 @@ export function createSignUpPage(): HTMLElement {
 			</form>
 		</div>
 	`;
+
+	page.addEventListener('click', (e) => {
+		const target = e.target as HTMLElement;
+		const route = target.getAttribute('data-route');
+		if (route) {
+			import('../router/router.js').then(({ router }) => {
+				router.navigate(route);
+		});
+		}
+	});
 
 	console.log("LOADING SIGNUP PAGE");
 	const form = page.querySelector(".space-y-4") as HTMLFormElement;
@@ -59,6 +72,7 @@ export async function sendSignUpInfo(page: HTMLDivElement): Promise<void> {
 		for (const [key, value] of formData.entries()){
 			console.log(key, value);
 		}
+		console.log("About to send response");
 		const response = await fetch("/api/signup", {
 			method: "POST",
 			body: formData,

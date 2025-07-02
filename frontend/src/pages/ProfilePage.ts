@@ -270,9 +270,12 @@ async function updateDbAvatar(file: File){
 	});
 	if (response.ok){
 		const data = await response.json();
-		console.log('Avatar updated!');
-		if (data.avatarUrl) {
-			return data.avatarUrl;
+		console.log('Avatar updated!', data);
+		if (data.avatarPath && typeof data.avatarPath === 'string') {
+			// 🔍 Ajout d'un timestamp pour éviter le cache
+			const timestampedUrl = `${data.avatarPath}?t=${Date.now()}`;
+			console.log('URL avec timestamp:', timestampedUrl);
+			return timestampedUrl;
 		} else {
 			console.error('Failed to update avatar');
 			return null;

@@ -1,4 +1,6 @@
 services:
+
+
   dev:
     container_name: trans-dev
     image: ima-dev
@@ -9,13 +11,18 @@ services:
     volumes:
       - ..:/app
       - /app/node_modules
-    ports:
-    - "3000:3000"
-    - "5173:5173"
+    # ports:
+    # - "3000:3001"
+    # - "5173:5173"
     environment:
       - NODE_ENV=development
       - DEBUG=true
+      - LOGSTASH_URL=http://logstash:5044
     restart: unless-stopped
+    depends_on:
+      - logstash
+    networks:
+      - app-network
 
 
 
@@ -31,7 +38,138 @@ services:
     #   - ..:/app
     # - /app/node_modules
     ports:
-    - "3000:3001"
+      - "3000:3001"
     command: ["npm", "start"]
     environment:
       - NODE_ENV=production
+      - LOGSTASH_URL=http://logstash:5044
+    depends_on:
+      - logstash
+    networks:
+      - app-network
+
+
+
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: trans-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - app-network
+
+
+
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: trans-logstash
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./../monitoring/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    depends_on:
+      - elasticsearch
+    environment:
+      - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
+    networks:
+      - app-network
+
+
+
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: trans-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_NAME=trans-kibana
+    volumes:
+      - ./monitoring/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+      - ./monitoring/kibana/dashboards:/usr/share/kibana/data/dashboards:ro
+    depends_on:
+      - elasticsearch
+    networks:
+      - app-network
+
+
+
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: trans-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - app-network
+
+
+
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: trans-node-exporter
+    ports:
+      - "9101:9101"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - app-network
+
+
+
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: trans-grafana
+    ports:
+      - "9080:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin42
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/transcendence.json
+    volumes:
+      - ./monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - app-network
+
+
+
+
+volumes:
+  elasticsearch_data:
+  grafana_data:
+
+
+
+
+networks:
+  app-network:
+    driver: bridge
