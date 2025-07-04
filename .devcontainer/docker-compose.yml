@@ -12,7 +12,7 @@ services:
       - ..:/app
       - /app/node_modules
     # ports:
-    # - "3000:3001"
+    # - "3000:3000"
     # - "5173:5173"
     environment:
       - NODE_ENV=development
@@ -27,26 +27,26 @@ services:
 
 
 
-  prod:
-    container_name: trans-prod
-    image: ima-prod
-    build:
-      context: ..
-      dockerfile: .devcontainer/Dockerfile
-      target: prod
-    # volumes:
-    #   - ..:/app
-    # - /app/node_modules
-    ports:
-      - "3000:3001"
-    command: ["npm", "start"]
-    environment:
-      - NODE_ENV=production
-      - LOGSTASH_URL=http://logstash:5044
-    depends_on:
-      - logstash
-    networks:
-      - app-network
+  # prod:
+  #   container_name: trans-prod
+  #   image: ima-prod
+  #   build:
+  #     context: ..
+  #     dockerfile: .devcontainer/Dockerfile
+  #     target: prod
+  #   # volumes:
+  #   #   - ..:/app
+  #   # - /app/node_modules
+  #   ports:
+  #     - "3000:3000"
+  #   command: ["npm", "start"]
+  #   environment:
+  #     - NODE_ENV=production
+  #     - LOGSTASH_URL=http://logstash:5044
+  #   depends_on:
+  #     - logstash
+  #   networks:
+  #     - app-network
 
 
 
@@ -55,6 +55,9 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
     container_name: trans-elasticsearch
     environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:5044
+      - cluster.name=trans-cluster
+      - node.name=trans-node
       - discovery.type=single-node
       - xpack.security.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
@@ -62,6 +65,7 @@ services:
       - "9200:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
+      - ./../monitoring/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     networks:
       - app-network
 
@@ -94,13 +98,26 @@ services:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - SERVER_NAME=trans-kibana
     volumes:
-      - ./monitoring/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
-      - ./monitoring/kibana/dashboards:/usr/share/kibana/data/dashboards:ro
+      - ./../monitoring/kibana/kibana.yml:/usr/share/kibana/data/config/kibana.yml:ro
+      - kibana_data:/usr/share/kibana/data
     depends_on:
       - elasticsearch
     networks:
       - app-network
 
+
+  kibana-init:
+    container_name: trans-init-kibana
+    image: curlimages/curl:latest
+    depends_on:
+      - kibana
+    volumes:
+      - ./../monitoring/kibana/saved_objects:/usr/share/kibana/saved_objects:ro
+      - ./../monitoring/kibana/init.sh:/init.sh:ro
+    command: ["sh", "/init.sh"]
+    restart: "no"
+    networks:
+      - app-network
 
 
 
@@ -110,12 +127,13 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
       - '--web.enable-lifecycle'
     networks:
       - app-network
@@ -151,10 +169,6 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin42
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/transcendence.json
-    volumes:
-      - ./monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - prometheus
     networks:
@@ -165,7 +179,8 @@ services:
 
 volumes:
   elasticsearch_data:
-  grafana_data:
+  kibana_data:
+  prometheus_data:
 
 
 

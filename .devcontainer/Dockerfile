@@ -15,8 +15,7 @@ COPY . .
 
 EXPOSE 3000 5173
 
-CMD ["bash", "-c", "exec npm run dev"]
-
+CMD ["bash", "-c", "echo 'Container ready. Run npm run dev manually.' && tail -f /dev/null"]
 
 # FOR PROD
 FROM node:22-slim AS prod
