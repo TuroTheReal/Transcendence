@@ -4,7 +4,7 @@ FROM node:22-slim AS dev
 WORKDIR /app
 
 RUN apt-get update && \
-apt-get install -y bash git curl procps lsof && \
+apt-get install -y bash git curl procps lsof iputils-ping net-tools && \
 rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./

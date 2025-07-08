@@ -1,12 +1,10 @@
 import pino from 'pino';
 import net from 'net';
 
-// 🔧 CHANGEMENT MINIMAL : Envoyer à Logstash au lieu d'Elasticsearch
 const sendToLogstash = async (logData: any): Promise<void> => {
-  try {
-    // Logstash écoute généralement sur le port 5044 ou 5000
-    const logstashHost = process.env.LOGSTASH_HOST || 'logstash';
-    const logstashPort = parseInt(process.env.LOGSTASH_PORT || '5044');
+	try {
+		const logstashHost = process.env.LOGSTASH_HOST || 'logstash';
+		const logstashPort = parseInt(process.env.LOGSTASH_PORT || '5044');
 
     const logEntry = {
       ...logData,

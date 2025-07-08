@@ -3,7 +3,6 @@ services:
 
   dev:
     container_name: trans-dev
-    image: ima-dev
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
@@ -17,7 +16,8 @@ services:
     environment:
       - NODE_ENV=development
       - DEBUG=true
-      - LOGSTASH_URL=http://logstash:5044
+      - LOGSTASH_HOST=${LOGSTASH_HOST}
+      - LOGSTASH_PORT=${LOGSTASH_PORT}
     restart: unless-stopped
     depends_on:
       - logstash
@@ -27,9 +27,20 @@ services:
 
 
 
+
+
+# A FAIRE NEXT
+
+# archivage des logs trop anciens ou pas important
+
+# prometheus et grafana
+
+
+
+
+
   # prod:
   #   container_name: trans-prod
-  #   image: ima-prod
   #   build:
   #     context: ..
   #     dockerfile: .devcontainer/Dockerfile
@@ -40,9 +51,10 @@ services:
   #   ports:
   #     - "3000:3000"
   #   command: ["npm", "start"]
-  #   environment:
-  #     - NODE_ENV=production
-  #     - LOGSTASH_URL=http://logstash:5044
+    # environment:
+    #   - NODE_ENV=production
+    #   - LOGSTASH_HOST=${LOGSTASH_HOST}
+    #   - LOGSTASH_PORT=${LOGSTASH_PORT}
   #   depends_on:
   #     - logstash
   #   networks:
@@ -55,14 +67,17 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
     container_name: trans-elasticsearch
     environment:
-      - ELASTICSEARCH_URL=http://elasticsearch:5044
-      - cluster.name=trans-cluster
-      - node.name=trans-node
+      - cluster.name=${CLUSTER_NAME}
+      - node.name=${NODE_NAME}
       - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=true
+      - "ES_JAVA_OPTS=${ES_JAVA_OPTS}"
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+      - xpack.license.self_generated.type=basic
     ports:
-      - "9200:9200"
+      - "${ELASTIC_PORT}:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
       - ./../monitoring/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
@@ -76,13 +91,18 @@ services:
     image: docker.elastic.co/logstash/logstash:8.11.0
     container_name: trans-logstash
     ports:
-      - "5044:5044"
+      - "${LOGSTASH_PORT}:5044"
     volumes:
       - ./../monitoring/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
     depends_on:
       - elasticsearch
     environment:
-      - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
+      - "LS_JAVA_OPTS=${LS_JAVA_OPTS}"
+      - ELASTIC_USER=${ELASTIC_USER}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_HOST=${ELASTIC_HOST}
+      - LOGSTASH_HOST=${LOGSTASH_HOST}
+      - LOGSTASH_PORT=${LOGSTASH_PORT}
     networks:
       - app-network
 
@@ -93,13 +113,23 @@ services:
     image: docker.elastic.co/kibana/kibana:8.11.0
     container_name: trans-kibana
     ports:
-      - "5601:5601"
+      - "${KIBANA_PORT}:5601"
     environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - SERVER_NAME=trans-kibana
+      - KIBANA_PORT=${KIBANA_PORT}
+      - ELASTIC_URL=${ELASTIC_URL}
+      - SERVER_NAME=${KIBANA_SERV_NAME}
+      - REPORTING_KEY=${REPORTING_KEY}
+      - SECURITY_KEY=${SECURITY_KEY}
+      - SAVED_OBJECTS_KEY=${SAVED_OBJECTS_KEY}
+      - XPACK_SECURITY_ENABLED=true
+      - XPACK_SECURITY_ENROLLMENT_ENABLED=false
+      - LOGGING_ROOT_LEVEL=info
     volumes:
-      - ./../monitoring/kibana/kibana.yml:/usr/share/kibana/data/config/kibana.yml:ro
+      - ./../monitoring/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+      - ./../monitoring/kibana/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
+      - shared_data:/shared
       - kibana_data:/usr/share/kibana/data
+    entrypoint: ["/usr/local/bin/entrypoint.sh"]
     depends_on:
       - elasticsearch
     networks:
@@ -108,13 +138,19 @@ services:
 
   kibana-init:
     container_name: trans-init-kibana
-    image: curlimages/curl:latest
+    image: debian:bookworm-slim
+    user: root
     depends_on:
       - kibana
+    environment:
+      - ELASTIC_URL=${ELASTIC_URL}
+      - ELASTIC_USER=${ELASTIC_USER}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
     volumes:
       - ./../monitoring/kibana/saved_objects:/usr/share/kibana/saved_objects:ro
       - ./../monitoring/kibana/init.sh:/init.sh:ro
-    command: ["sh", "/init.sh"]
+      - shared_data:/shared
+    command: ["sh", "-c", "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y curl && /init.sh"]
     restart: "no"
     networks:
       - app-network
@@ -125,7 +161,7 @@ services:
     image: prom/prometheus:latest
     container_name: trans-prometheus
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_PORT}:9090"
     volumes:
       - prometheus_data:/prometheus
     command:
@@ -145,7 +181,7 @@ services:
     image: prom/node-exporter:latest
     container_name: trans-node-exporter
     ports:
-      - "9101:9101"
+      - "${NODE_EXP_PORT}:9101"
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -165,9 +201,10 @@ services:
     image: grafana/grafana:latest
     container_name: trans-grafana
     ports:
-      - "9080:3000"
+      - "${GRAFANA_PORT}:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin42
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
     depends_on:
       - prometheus
@@ -181,10 +218,10 @@ volumes:
   elasticsearch_data:
   kibana_data:
   prometheus_data:
-
-
+  shared_data:
 
 
 networks:
   app-network:
+    name: app-network
     driver: bridge

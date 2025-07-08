@@ -1,12 +1,13 @@
 server.name: trans-kibana
 server.host: "0.0.0.0"
-server.port: 5601
-elasticsearch.hosts: ["http://elasticsearch:9200"]
-monitoring.ui.container.elasticsearch.enabled: true
-server.publicBaseUrl: "http://localhost:5601"
+server.port: ${KIBANA_PORT}
+server.publicBaseUrl: "http://localhost:${KIBANA_PORT}"
 
-kibana.index: ".kibana"
-kibana.defaultAppId: "dashboard"
+elasticsearch.hosts: ["${ELASTIC_URL}"]
+
+monitoring.ui.container.elasticsearch.enabled: true
+
+server.defaultRoute: "/app/dashboards#/view/727604a0-58b4-11f0-a8c7-5dcc1004b7ba?_g=(filters:!(),refreshInterval:(pause:!t,value:60000),time:(from:now-15m,to:now))"
 
 logging.appenders.file.type: file
 logging.appenders.file.fileName: /usr/share/kibana/logs/kibana.log
@@ -14,9 +15,10 @@ logging.appenders.file.layout.type: json
 logging.root.appenders: [default, file]
 logging.root.level: info
 
-xpack.reporting.encryptionKey: "transcendence_reporting_key_32_chars"
-xpack.security.encryptionKey: "transcendence_security_key_32_chars"
-xpack.encryptedSavedObjects.encryptionKey: "transcendence_objects_key_32_chars"
+xpack.security.enabled: true
+xpack.reporting.encryptionKey: "${REPORTING_KEY}"
+xpack.security.encryptionKey: "${SECURITY_KEY}"
+xpack.encryptedSavedObjects.encryptionKey: "${SAVED_OBJECTS_KEY}"
 
 kibana.autocompleteTimeout: 3000
 kibana.autocompleteTerminateAfter: 100000
