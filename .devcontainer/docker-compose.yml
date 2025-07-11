@@ -25,18 +25,9 @@ services:
       - app-network
 
 
-
-
-
-
 # A FAIRE NEXT
 
-# archivage des logs trop anciens ou pas important
-
 # prometheus et grafana
-
-
-
 
 
   # prod:
@@ -60,9 +51,6 @@ services:
   #   networks:
   #     - app-network
 
-
-
-
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
     container_name: trans-elasticsearch
@@ -85,6 +73,25 @@ services:
       - app-network
 
 
+  log-cleanup:
+    image: debian:bookworm-slim
+    container_name: trans-log-cleanup
+    user: root
+    environment:
+      - ELASTIC_URL=${ELASTIC_URL}
+      - ELASTIC_USER=${ELASTIC_USER}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./../monitoring/scripts/logs-cleanup.sh:/usr/local/bin/logs-cleanup.sh:ro
+      - ./../monitoring/scripts/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
+      - log_cleanup_data:/var/log
+      - ./../monitoring/scripts/logs-cleanup:/etc/cron.d/logs-cleanup:ro
+    command: ["sh", "-c", "/usr/local/bin/entrypoint.sh"]
+    restart: unless-stopped
+    networks:
+      - app-network
 
 
   logstash:
@@ -105,8 +112,6 @@ services:
       - LOGSTASH_PORT=${LOGSTASH_PORT}
     networks:
       - app-network
-
-
 
 
   kibana:
@@ -156,7 +161,6 @@ services:
       - app-network
 
 
-
   prometheus:
     image: prom/prometheus:latest
     container_name: trans-prometheus
@@ -173,8 +177,6 @@ services:
       - '--web.enable-lifecycle'
     networks:
       - app-network
-
-
 
 
   node-exporter:
@@ -195,8 +197,6 @@ services:
       - app-network
 
 
-
-
   grafana:
     image: grafana/grafana:latest
     container_name: trans-grafana
@@ -212,13 +212,12 @@ services:
       - app-network
 
 
-
-
 volumes:
   elasticsearch_data:
   kibana_data:
   prometheus_data:
   shared_data:
+  log_cleanup_data:
 
 
 networks:

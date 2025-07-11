@@ -1,0 +1,3 @@
+
+* * * * * root /usr/local/bin/logs-cleanup.sh >> /var/log/transcendence-cleanup.log 2>&1
+

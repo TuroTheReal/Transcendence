@@ -43,8 +43,15 @@ const pinoLogger = pino({
 export const logger = {
   info: (message: string | object) => {
     const logData = typeof message === 'string'
-      ? { level: 'info', message }
-      : { level: 'info', message: JSON.stringify(message), ...message };
+		? {
+			level: 'info',
+			message,
+		}
+		: {
+			level: 'info',
+			message: JSON.stringify(message),
+			...message
+		};
 
     pinoLogger.info(logData);
     setImmediate(() => sendToLogstash(logData));
@@ -52,8 +59,15 @@ export const logger = {
 
   error: (message: string | object) => {
     const logData = typeof message === 'string'
-      ? { level: 'error', message }
-      : { level: 'error', message: JSON.stringify(message), ...message };
+		? {
+			level: 'error',
+			message,
+		}
+		: {
+			level: 'error',
+			message: JSON.stringify(message),
+			...message
+		};
 
     pinoLogger.error(logData);
     setImmediate(() => sendToLogstash(logData));
@@ -61,8 +75,15 @@ export const logger = {
 
   warn: (message: string | object) => {
     const logData = typeof message === 'string'
-      ? { level: 'warn', message }
-      : { level: 'warn', message: JSON.stringify(message), ...message };
+		? {
+			level: 'warn',
+			message,
+		}
+		: {
+			level: 'warn',
+			message: JSON.stringify(message),
+			...message
+		};
 
     pinoLogger.warn(logData);
     setImmediate(() => sendToLogstash(logData));
@@ -70,15 +91,21 @@ export const logger = {
 
   debug: (message: string | object) => {
     const logData = typeof message === 'string'
-      ? { level: 'debug', message }
-      : { level: 'debug', message: JSON.stringify(message), ...message };
+		? {
+			level: 'debug',
+			message,
+		}
+		: {
+			level: 'debug',
+			message: JSON.stringify(message),
+			...message
+		};
 
     pinoLogger.debug(logData);
     setImmediate(() => sendToLogstash(logData));
   }
 };
 
-// Version encore plus simple
 export const log = (message: string | object) => {
   logger.info(message);
 };
