@@ -9,6 +9,7 @@ const sendToLogstash = async (logData: any): Promise<void> => {
     const logEntry = {
       ...logData,
       '@timestamp': new Date().toISOString(),
+      timestamp: new Date().toISOString(),
       service: 'transcendence',
       environment: process.env.NODE_ENV || 'development'
     };

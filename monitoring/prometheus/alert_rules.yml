@@ -1,0 +1,35 @@
+groups:
+  - name: transcendence_basic_alerts
+    rules:
+      # Alerte si le taux d'erreur HTTP dépasse 5% sur 5 minutes
+      - alert: HighHttpErrorRate
+        expr: rate(transcendence_http_requests_total{status_code=~"5.."}[30s]) / rate(transcendence_http_requests_total[30s]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          service: transcendence
+        annotations:
+          summary: "Taux d'erreur HTTP élevé détecté"
+          description: "Le taux d'erreur HTTP est de {{ $value | humanizePercentage }} sur les 5 dernières minutes"
+
+      # Alerte si le temps de réponse moyen dépasse 1 seconde
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(transcendence_http_request_duration_seconds_bucket[30s])) > 1
+        for: 3m
+        labels:
+          severity: warning
+          service: transcendence
+        annotations:
+          summary: "Temps de réponse élevé détecté"
+          description: "95% des requêtes prennent plus de {{ $value }}s à répondre"
+
+      # Alerte si l'application ne répond plus
+      - alert: ServiceDown
+        expr: up{job="trans-dev"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: transcendence
+        annotations:
+          summary: "Service Transcendence indisponible"
+          description: "L'application Transcendence ne répond plus depuis {{ $value }}m"
