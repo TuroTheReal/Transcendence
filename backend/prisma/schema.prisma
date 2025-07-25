@@ -13,28 +13,83 @@ datasource db {
 model User {
   id					Int			@id @default(autoincrement())
   username				String		@unique
-  email					String?
+  email					String		@unique
   passwordHash			String
   avatarUrl				String?
   isTwoFactorEnabled	Boolean		@default(false)
+  connected				Boolean		@default(false)
   twoFactorSecret		String?
   twoFactorEnabled		Boolean		@default(false)
   twoFactorEnabledAt	DateTime?
+  gamesPlayed				Int			@default(0)
+  losses				Int			@default(0)
+  wins					Int			@default(0)
   createdAt				DateTime	@default(now())
   matchesAsPlayer1		Match[]		@relation("Player1")
   matchesAsPlayer2		Match[]		@relation("Player2")
   friends				User[]		@relation("UserFriends")
   friendOf				User[]		@relation("UserFriends")
+  sentMessages        Message[]      @relation("SentMessages")
+  receivedMessages    Message[]      @relation("ReceivedMessages")
+  blockedUsers        Block[]        @relation("Blocker")
+  blockedBy           Block[]        @relation("Blocked")
+  invitations         GameInvite[]   @relation("Inviter")
+  invitedTo           GameInvite[]   @relation("Invitee")
+  notifications       Notification[]
 }
 
 model Match {
   id					Int			@id @default(autoincrement())
+  players				Int			@default(0)
   player1				User		@relation("Player1", fields: [player1Id], references: [id])
   player1Id				Int
-  player2				User		@relation("Player2", fields: [player2Id], references: [id])
+  player2				User	@relation("Player2", fields: [player2Id], references: [id])
   player2Id				Int
   score1				Int
   score2				Int
   winnerId				Int      // FK vers User.id (le gagnant)
   playedAt				DateTime	@default(now())
+  lasted				Int			@default(0)
+  pointsUp				Int			@default(0)
+  pointsDown			Int			@default(0)
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+  senderId    Int
+  receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiverId  Int
+  content     String
+  createdAt   DateTime @default(now())
+  isRead      Boolean  @default(false)
+}
+
+model Block {
+  id          Int      @id @default(autoincrement())
+  blocker     User     @relation("Blocker", fields: [blockerId], references: [id])
+  blockerId   Int
+  blocked     User     @relation("Blocked", fields: [blockedId], references: [id])
+  blockedId   Int
+  createdAt   DateTime @default(now())
+}
+
+model GameInvite {
+  id          Int      @id @default(autoincrement())
+  inviter     User     @relation("Inviter", fields: [inviterId], references: [id])
+  inviterId   Int
+  invitee     User     @relation("Invitee", fields: [inviteeId], references: [id])
+  inviteeId   Int
+  status      String   // pending, accepted, declined
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  type        String   // e.g. "tournament"
+  message     String
+  createdAt   DateTime @default(now())
+  isRead      Boolean  @default(false)
 }

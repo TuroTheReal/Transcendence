@@ -1,65 +1,149 @@
+import { AuthService } from "../middleware/auth.js";
+import { i18n } from "../services/i18n.js";
+import { createLanguageSwitcher } from "../components/LanguageSwitcher.js";
+import { createNeonContainer } from "../styles/neonTheme.js";
+
+// Créer une instance locale (pas de singleton)
+const authService = new AuthService();
+
 export function createLoginPage(): HTMLElement {
 	const page = document.createElement("div");
-	page.className =
-		"min-h-screen flex items-center justify-center bg-gradient-to-br from-green-100 to-blue-100";
+	page.className = "fade-in";
 
-	page.innerHTML = `
-    <div class="card max-w-md w-full bg-white">
-      <h1 class="text-6xl text-center text-blue-500 mb-8">Transcendence</h1>
-      <form class="space-y-4">
-        <input type="text" placeholder="Username" id="username" required class="input">
-        <input type="password" placeholder="Password" id="password" required class="input">
-        <button type="submit" id="login-btn" class="btn w-full">Log in</button>
-      </form>
-      <button type="button" id="register-btn" class="btn w-full mt-4 bg-gray-500 hover:bg-gray-600">Sign up</button>
-    </div>
-  `;
-	console.log("DEBUGGING LOGIN");
-	navigateToSignUp(page);
-	const form = page.querySelector('.space-y-4') as HTMLFormElement;
-	console.log("DEBUGGING 1");
-	form.addEventListener('submit', (e) => {
-		e.preventDefault();
-		console.log("DEBUGGING 2");
-		sendLogInInfo(page);
-	});
+	const renderContent = () => {
+		const content = `
+			<div class="neon-card max-w-md w-full p-8 slide-up">
+				<h1 class="neon-title text-center mb-8"> ${i18n.t('auth.login_title')}</h1>
+				<form class="space-y-6">
+					<div>
+						<input 
+							type="text" 
+							placeholder="${i18n.t('auth.username')}" 
+							id="username" 
+							required 
+							class="neon-input"
+						>
+					</div>
+					<div>
+						<input 
+							type="password" 
+							placeholder="${i18n.t('auth.password')}" 
+							id="password" 
+							required 
+							class="neon-input"
+						>
+					</div>
+					<button type="submit" id="login-btn" class="neon-btn neon-btn-primary w-full">
+						✨ ${i18n.t('common.login')}
+					</button>
+				</form>
+				<button type="button" id="register-btn" class="neon-btn neon-btn-secondary w-full mt-4">
+					📝 ${i18n.t('common.register')}
+				</button>
+			</div>
+			<div class="absolute top-4 right-4" id="language-switcher-container"></div>
+		`;
+		
+		page.innerHTML = createNeonContainer(content);
+		
+		// Add language switcher
+		const languageSwitcherContainer = page.querySelector('#language-switcher-container');
+		if (languageSwitcherContainer) {
+			languageSwitcherContainer.appendChild(createLanguageSwitcher());
+		}
+		
+		// Re-attach event listeners after re-render
+		attachEventListeners();
+	};
+	
+	const attachEventListeners = () => {
+		const form = page.querySelector('form') as HTMLFormElement;
+		const signupBtn = page.querySelector('#register-btn') as HTMLButtonElement;
+		
+		if (form) {
+			form.addEventListener('submit', (e) => {
+				e.preventDefault();
+				sendLogInInfo(page);
+			});
+		}
+		
+		if (signupBtn) {
+			signupBtn.addEventListener("click", () => {
+				import("../router/router.js").then(({ router }) => {
+					router.navigate("/signup");
+				});
+			});
+		}
+	};
+	
+	renderContent();
+	
+	// Re-render when language changes
+	window.addEventListener('languageChanged', renderContent);
 	return page;
 }
 
-function navigateToSignUp(page: HTMLDivElement){
-  const signupBtn = page.querySelector('#register-btn') as HTMLButtonElement;
-  signupBtn.addEventListener("click", () => {
-	import("../router/router.js").then(({ router }) => {
-		router.navigate("/signup");
-		});
-  	});
+export async function requireAuth(): Promise<boolean> {
+    const user = await authService.getCurrentUser();
+    if (!user) {
+        import("../router/router.js").then(({ router }) => {
+            router.navigate('/login');
+        });
+        return false;
+    }
+    return true;
 }
 
 async function sendLogInInfo(page: HTMLDivElement): Promise<void> {
-	const usernameInput = page.querySelector("#username") as HTMLInputElement;
-	const passwordInput = page.querySelector("#password") as HTMLInputElement;
+    const usernameInput = page.querySelector("#username") as HTMLInputElement;
+    const passwordInput = page.querySelector("#password") as HTMLInputElement;
 
-	console.log("DEBUGGING 3");
-	const UserInfo = {
-		username: usernameInput.value,
-		password: passwordInput.value,
-	};
-	console.log("DEBUGGING 5");
-	const response = await fetch("/api/login", {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json"
-		},
-		body: JSON.stringify(UserInfo),
-	});
-	const data = await response.json();
-	if (data.ok || data.success){
-		localStorage.setItem("username", UserInfo.username);
-		//localStorage.setItem("jwt", data.token);
-		import("../router/router.js").then(({ router }) => {
-			router.navigate('/home');
-		});
-	} else {
-		alert("Issue while logging in");
-	}
+    const UserInfo = {
+        username: usernameInput.value,
+        password: passwordInput.value,
+    };
+
+    try {
+        console.log("🔍 Sending login request with:", UserInfo);
+        
+        const response = await fetch("/api/login", {
+            method: "POST",
+            credentials: 'include',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(UserInfo),
+        });
+        
+        console.log("🔍 Login response status:", response.status);
+        console.log("🔍 Login response headers:", response.headers);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log("🔍 Login response data:", data);
+        
+        if (data.success) {
+            // Store the JWT token in sessionStorage
+            sessionStorage.setItem('authToken', data.token);
+            // Store username for convenience
+            sessionStorage.setItem('username', data.user.username);
+            
+            console.log("🔑 Login success - Stored token:", data.token);
+            console.log("🔑 Login success - Stored username:", data.user.username);
+            
+            await authService.getCurrentUser();
+            import("../router/router.js").then(({ router }) => {
+                router.navigate('/game');
+            });
+        } else {
+            alert(i18n.t('auth.login_error') + ": " + (data.message || i18n.t('auth.invalid_credentials')));
+        }
+    } catch (error) {
+        console.error("Login error:", error);
+        alert(i18n.t('auth.login_error') + ": " + (error || "Please try again."));
+    }
 }

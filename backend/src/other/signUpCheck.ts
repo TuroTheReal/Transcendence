@@ -1,5 +1,3 @@
-import { UserInfo } from "os";
-
 interface IUserInfo {
 	username: String,
 	password: String,
@@ -15,37 +13,31 @@ function isPasswordString(user : IUserInfo): boolean {
 };
 
 function isUsernameAllowed(user : IUserInfo): boolean {
-	return user.password !== "admin";
+	const username = user.username.toString();
+	const forbiddenNames = ["admin", "root", "system", "null", "undefined"];
+	return !forbiddenNames.includes(username.toLowerCase()) && username.length >= 2;
 };
 
 function isPasswordLong(user : IUserInfo): boolean {
-	return user.password.length >= 5;
+	return user.password.length >= 8;
 };
 
 function isAvatarDefined(user : IUserInfo): boolean {
 	return user.avatar === undefined || user.avatar instanceof File;
 };
 
-function UserSignUpCheck(user : IUserInfo): boolean {
-	if (!isUsernameString(user)) {
-		alert("Username must be a string");
-		return false;
-	}
-	if (!isPasswordString(user)) {
-		alert("Password must be a string");
-		return false;
-	}
-	if (!isUsernameAllowed(user)) {
-		alert("Username must not be admin");
-		return false;
-	}
-	if (!isPasswordLong(user)) {
-		alert("Password must be at least 5 characters long");
-		return false;
-	}
-	if (!isAvatarDefined(user)) {
-		alert("Avatar must be a File ou undefined");
-		return false;
-	}
-	return true;
+export function UserSignUpCheck(user : IUserInfo): true | string {
+    if (!isUsernameString(user)) {
+        return "Username must be a string";
+    }
+    if (!isPasswordString(user)) {
+        return "Password must be a string";
+    }
+    if (!isUsernameAllowed(user)) {
+        return "Username must not be admin";
+    }
+    if (!isPasswordLong(user)) {
+        return "Password must be at least 5 characters long";
+    }
+    return true;
 }

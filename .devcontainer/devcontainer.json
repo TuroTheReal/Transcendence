@@ -14,7 +14,7 @@
       ]
     }
   },
-  "forwardPorts": [3000, 5173, 5555],
+  "forwardPorts": [3001, 5173, 5555, 3443],
   "portsAttributes": {
     "3000": {
       "label": "Backend/Frontend",
