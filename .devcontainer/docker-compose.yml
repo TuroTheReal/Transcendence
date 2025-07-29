@@ -6,6 +6,7 @@ services:
 # MAJ pour connected user
 
   dev:
+    user: "0:0"
     container_name: trans-dev
     build:
       context: ..
@@ -41,6 +42,7 @@ services:
       - app-network
 
   # prod:
+#     user: "0:0"
   #   container_name: trans-prod
   #   build:
   #     context: ..
@@ -63,6 +65,7 @@ services:
   #   restart: unless-stopped
 
   elasticsearch:
+    # user: "0:0"
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
     container_name: trans-elasticsearch
     environment:
@@ -87,9 +90,9 @@ services:
 
 
   log-cleanup:
+    user: "0:0"
     image: debian:bookworm-slim
     container_name: trans-log-cleanup
-    user: root
     environment:
       - ELASTIC_URL=${ELASTIC_URL}
       - ELASTIC_USER=${ELASTIC_USER}
@@ -109,6 +112,7 @@ services:
 
 
   logstash:
+    user: "0:0"
     image: docker.elastic.co/logstash/logstash:8.11.0
     container_name: trans-logstash
     ports:
@@ -131,7 +135,9 @@ services:
 
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.11.0
+    build:
+      context: ./../monitoring/kibana
+      dockerfile: Dockerfile
     container_name: trans-kibana
     ports:
       - "${KIBANA_PORT}:5601"
@@ -142,12 +148,13 @@ services:
       - REPORTING_KEY=${REPORTING_KEY}
       - SECURITY_KEY=${SECURITY_KEY}
       - SAVED_OBJECTS_KEY=${SAVED_OBJECTS_KEY}
-      - XPACK_SECURITY_ENABLED=true
+      # - XPACK_SECURITY_ENABLED=true
+      - xpack.security.enabled=true
       - XPACK_SECURITY_ENROLLMENT_ENABLED=false
       - LOGGING_ROOT_LEVEL=info
     volumes:
       - ./../monitoring/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
-      - ./../monitoring/kibana/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
+      # - ./../monitoring/kibana/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
       - shared_data:/shared
       - kibana_data:/usr/share/kibana/data
     entrypoint: ["/usr/local/bin/entrypoint.sh"]
@@ -158,11 +165,9 @@ services:
     restart: unless-stopped
 
 
-
   kibana-init:
     container_name: trans-init-kibana
     image: debian:bookworm-slim
-    user: root
     depends_on:
       - kibana
     environment:
@@ -181,6 +186,7 @@ services:
 
 
   prometheus:
+    user: "0:0"
     image: prom/prometheus:latest
     container_name: trans-prometheus
     ports:
@@ -205,6 +211,7 @@ services:
 
 
   node-exporter:
+    user: "0:0"
     image: prom/node-exporter:latest
     container_name: trans-node-exporter
     ports:
@@ -228,6 +235,7 @@ services:
 
 
   grafana:
+    user: "0:0"
     image: grafana/grafana:latest
     container_name: trans-grafana
     ports:

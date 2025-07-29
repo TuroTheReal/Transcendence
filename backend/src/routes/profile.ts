@@ -25,18 +25,23 @@ const secretKey = process.env.COOKIE_SECRET;
 // 	return undefined;
 // }
 
-export function extractTokenFromRequest(request: FastifyRequest): { userId: number; username: string } | null {
+export function extractTokenFromRequest(
+	request: FastifyRequest
+): { userId: number; username: string } | null {
 	const authHeader = request.headers.authorization;
-	if (!authHeader || !authHeader.startsWith('Bearer ')) {
+	if (!authHeader || !authHeader.startsWith("Bearer ")) {
 		return null;
 	}
 
 	const token = authHeader.substring(7);
 	try {
-		const decoded = jwt.verify(token, secretKey || 'fallback-secret-key') as any;
+		const decoded = jwt.verify(
+			token,
+			secretKey || "fallback-secret-key"
+		) as any;
 		return { userId: decoded.id, username: decoded.username };
 	} catch (error) {
-		console.error('JWT verification error:', error);
+		console.error("JWT verification error:", error);
 		return null;
 	}
 }
@@ -45,70 +50,90 @@ export async function registerProfileRoute(
 	app: FastifyInstance<any, any, any, any>,
 	prisma: PrismaClient
 ) {
-	app.get("/avatars/:filename", async (request: FastifyRequest<{Params: {filename: string}}>, reply) => {
-		try {
-			const filename = request.params.filename;
-			console.log("🔍 Server-level avatar route called for:", filename);
+	app.get(
+		"/avatars/:filename",
+		async (
+			request: FastifyRequest<{ Params: { filename: string } }>,
+			reply
+		) => {
+			try {
+				const filename = request.params.filename;
+				console.log(
+					"🔍 Server-level avatar route called for:",
+					filename
+				);
 
-			if (!/\.(jpg|jpeg|png|gif|webp)$/i.test(filename)) {
-				return reply.status(400).send({ error: "Invalid file type" });
-			}
+				if (!/\.(jpg|jpeg|png|gif|webp)$/i.test(filename)) {
+					return reply
+						.status(400)
+						.send({ error: "Invalid file type" });
+				}
 
-			const safeFilename = path.basename(filename);
-			const filePath = path.join(PROJECT_ROOT, "public", "avatars", safeFilename);
+				const safeFilename = path.basename(filename);
+				const filePath = path.join(
+					PROJECT_ROOT,
+					"public",
+					"avatars",
+					safeFilename
+				);
 
-			console.log("🔍 Serving avatar from server level:", filePath);
+				console.log("🔍 Serving avatar from server level:", filePath);
 
-			if (!fs.existsSync(filePath)) {
-				console.log("❌ Avatar file not found:", filePath);
-				return reply.status(404).send({ error: "Avatar not found" });
-			}
+				if (!fs.existsSync(filePath)) {
+					console.log("❌ Avatar file not found:", filePath);
+					return reply
+						.status(404)
+						.send({ error: "Avatar not found" });
+				}
 
-			const stats = fs.statSync(filePath);
-			console.log("📁 File size:", stats.size, "bytes");
+				const stats = fs.statSync(filePath);
+				console.log("📁 File size:", stats.size, "bytes");
 
-			// Check if client wants base64 (for CSP bypass)
-			const acceptsBase64 = request.headers.accept?.includes('application/json');
+				// Check if client wants base64 (for CSP bypass)
+				const acceptsBase64 =
+					request.headers.accept?.includes("application/json");
 
-			if (acceptsBase64) {
-				// Return as base64 JSON for CSP bypass
-				const fileBuffer = fs.readFileSync(filePath);
-				const base64 = fileBuffer.toString('base64');
+				if (acceptsBase64) {
+					// Return as base64 JSON for CSP bypass
+					const fileBuffer = fs.readFileSync(filePath);
+					const base64 = fileBuffer.toString("base64");
+					const ext = path.extname(filename).toLowerCase();
+					let mimeType = "image/jpeg";
+					if (ext === ".png") mimeType = "image/png";
+					else if (ext === ".gif") mimeType = "image/gif";
+					else if (ext === ".webp") mimeType = "image/webp";
+
+					return reply.send({
+						data: `data:${mimeType};base64,${base64}`,
+						size: stats.size,
+						filename: filename,
+					});
+				}
+
+				// Normal image serving
 				const ext = path.extname(filename).toLowerCase();
-				let mimeType = 'image/jpeg';
-				if (ext === '.png') mimeType = 'image/png';
-				else if (ext === '.gif') mimeType = 'image/gif';
-				else if (ext === '.webp') mimeType = 'image/webp';
+				let mimeType = "image/jpeg";
+				if (ext === ".png") mimeType = "image/png";
+				else if (ext === ".gif") mimeType = "image/gif";
+				else if (ext === ".webp") mimeType = "image/webp";
 
-				return reply.send({
-					data: `data:${mimeType};base64,${base64}`,
-					size: stats.size,
-					filename: filename
-				});
+				reply.header("Content-Type", mimeType);
+				reply.header("Content-Length", stats.size);
+				reply.header("Cache-Control", "public, max-age=86400");
+				reply.header("Access-Control-Allow-Origin", "*");
+				reply.header("Access-Control-Allow-Methods", "GET");
+				reply.header("Access-Control-Allow-Headers", "Content-Type");
+
+				const fileStream = fs.createReadStream(filePath);
+				return reply.send(fileStream);
+			} catch (error) {
+				console.error("❌ Error serving avatar:", error);
+				return reply
+					.status(500)
+					.send({ error: "Internal server error" });
 			}
-
-			// Normal image serving
-			const ext = path.extname(filename).toLowerCase();
-			let mimeType = 'image/jpeg';
-			if (ext === '.png') mimeType = 'image/png';
-			else if (ext === '.gif') mimeType = 'image/gif';
-			else if (ext === '.webp') mimeType = 'image/webp';
-
-			reply.header('Content-Type', mimeType);
-			reply.header('Content-Length', stats.size);
-			reply.header('Cache-Control', 'public, max-age=86400');
-			reply.header('Access-Control-Allow-Origin', '*');
-			reply.header('Access-Control-Allow-Methods', 'GET');
-			reply.header('Access-Control-Allow-Headers', 'Content-Type');
-
-			const fileStream = fs.createReadStream(filePath);
-			return reply.send(fileStream);
-
-		} catch (error) {
-			console.error("❌ Error serving avatar:", error);
-			return reply.status(500).send({ error: "Internal server error" });
 		}
-	});
+	);
 
 	app.get(
 		"/api/profile",
@@ -118,7 +143,7 @@ export async function registerProfileRoute(
 		) => {
 			const auth = extractTokenFromRequest(request);
 			if (!auth) {
-				return reply.status(401).send({ error: 'Unauthorized' });
+				return reply.status(401).send({ error: "Unauthorized" });
 			}
 
 			const username = request.query.username as string;
@@ -131,12 +156,31 @@ export async function registerProfileRoute(
 		}
 	);
 
+	// ✅ Add this new route here, as a sibling, not inside the above handler: -> 2FA
+	app.get(
+		"/api/profile/:userId/2fa-status",
+		async (
+			request: FastifyRequest<{ Params: { userId: string } }>,
+			reply
+		) => {
+			const userId = Number(request.params.userId);
+			const user = await prisma.user.findUnique({
+				where: { id: userId },
+			});
+			if (!user) return reply.status(404).send({ enabled: false });
+			return reply.send({
+				enabled: !!user.isTwoFactorEnabled,
+				type: user.twoFactorType || null,
+			});
+		}
+	);
+
 	// HANDLE AVATAR REQUEST
 	app.post("/api/profile/avatar", async (request: FastifyRequest, reply) => {
 		const auth = extractTokenFromRequest(request);
 		console.log("auth: ", auth);
 		if (!auth) {
-			return reply.status(401).send({ error: 'Unauthorized' });
+			return reply.status(401).send({ error: "Unauthorized" });
 		}
 
 		const file = await request.file();
@@ -169,7 +213,7 @@ export async function registerProfileRoute(
 		) => {
 			const auth = extractTokenFromRequest(request);
 			if (!auth) {
-				return reply.status(401).send({ error: 'Unauthorized' });
+				return reply.status(401).send({ error: "Unauthorized" });
 			}
 
 			const { username, newUsername } = request.body as {
@@ -186,23 +230,25 @@ export async function registerProfileRoute(
 			try {
 				await updateUsername(prisma, currentUsername, newUsername);
 				// Générer un nouveau JWT avec le nouveau username
-				const updatedUser = await prisma.user.findUnique({ where: { username: newUsername } });
+				const updatedUser = await prisma.user.findUnique({
+					where: { username: newUsername },
+				});
 				if (!updatedUser) {
-					reply.status(400).send({ error: "User not found after update" });
+					reply
+						.status(400)
+						.send({ error: "User not found after update" });
 					return;
 				}
 				const newToken = jwt.sign(
 					{ id: updatedUser.id, username: updatedUser.username },
-					secretKey || 'fallback-secret-key',
-					{ expiresIn: '24h' }
+					secretKey || "fallback-secret-key",
+					{ expiresIn: "24h" }
 				);
 				reply.status(200).send({ success: true, token: newToken });
 			} catch (err) {
-				reply
-					.status(400)
-					.send({
-						error: "Username already exists or update failed",
-					});
+				reply.status(400).send({
+					error: "Username already exists or update failed",
+				});
 			}
 		}
 	);
@@ -218,7 +264,7 @@ export async function registerProfileRoute(
 		) => {
 			const auth = extractTokenFromRequest(request);
 			if (!auth) {
-				return reply.status(401).send({ error: 'Unauthorized' });
+				return reply.status(401).send({ error: "Unauthorized" });
 			}
 
 			const { username, newPassword } = request.body as {
@@ -229,7 +275,9 @@ export async function registerProfileRoute(
 			// Use the username from the JWT token for security
 			const currentUsername = auth.username;
 			if (!currentUsername || !newPassword) {
-				reply.status(400).send({ error: "Username and password are required" });
+				reply
+					.status(400)
+					.send({ error: "Username and password are required" });
 				return;
 			}
 			try {
@@ -250,7 +298,7 @@ export async function registerProfileRoute(
 		) => {
 			const auth = extractTokenFromRequest(request);
 			if (!auth) {
-				return reply.status(401).send({ error: 'Unauthorized' });
+				return reply.status(401).send({ error: "Unauthorized" });
 			}
 
 			const username = request.query.username as string;
@@ -282,12 +330,11 @@ export async function registerProfileRoute(
 		) => {
 			const auth = extractTokenFromRequest(request);
 			if (!auth) {
-				return reply.status(401).send({ error: 'Unauthorized' });
+				return reply.status(401).send({ error: "Unauthorized" });
 			}
 
 			const username = request.query.username as string;
-			try
-			{
+			try {
 				const user = await prisma.user.findUnique({
 					where: { username },
 					select: {
@@ -299,12 +346,11 @@ export async function registerProfileRoute(
 								avatarUrl: true,
 								gamesPlayed: true,
 								connected: true,
-							}
-						}
-					}
+							},
+						},
+					},
 				});
-				if (!user)
-					reply.status(404).send({ error: "User not found" });
+				if (!user) reply.status(404).send({ error: "User not found" });
 				console.log("Friends: ", user?.friends);
 				reply.status(200).send(user?.friends);
 			} catch (error) {
@@ -320,29 +366,36 @@ export async function registerProfileRoute(
 		if (!auth) return reply.status(401).send({ error: "Unauthorized" });
 
 		const { friendUsername } = request.body as { friendUsername: string };
-		if (!friendUsername) return reply.status(400).send({ error: "No username provided" });
+		if (!friendUsername)
+			return reply.status(400).send({ error: "No username provided" });
 
-		const user = await prisma.user.findUnique({ where: { username: auth.username } });
+		const user = await prisma.user.findUnique({
+			where: { username: auth.username },
+		});
 		if (!user) return reply.status(404).send({ error: "User not found" });
-		const friend = await prisma.user.findUnique({ where: { username: friendUsername } });
+		const friend = await prisma.user.findUnique({
+			where: { username: friendUsername },
+		});
 
 		if (!friend) return reply.status(404).send({ error: "user not found" });
-		if (user.id === friend.id) return reply.status(400).send({ error: "Cannot add yourself" });
+		if (user.id === friend.id)
+			return reply.status(400).send({ error: "Cannot add yourself" });
 
 		// Vérifie si déjà ami
 		const alreadyFriend = await prisma.user.findFirst({
 			where: {
 				id: user.id,
-				friends: { some: { id: friend.id } }
-			}
+				friends: { some: { id: friend.id } },
+			},
 		});
-		if (alreadyFriend) return reply.status(400).send({ error: "Already friends" });
+		if (alreadyFriend)
+			return reply.status(400).send({ error: "Already friends" });
 
 		await prisma.user.update({
 			where: { id: user.id },
 			data: {
-				friends: { connect: { id: friend.id } }
-			}
+				friends: { connect: { id: friend.id } },
+			},
 		});
 		reply.send({ success: true });
 	});
@@ -358,7 +411,7 @@ async function getUserInfo(username: string, prisma: PrismaClient) {
 			username: true,
 			avatarUrl: true,
 			passwordHash: true,
-			gamesPlayed:true,
+			gamesPlayed: true,
 			wins: true,
 			losses: true,
 			createdAt: true,
@@ -420,9 +473,12 @@ async function updateAvatar(
 	file: any
 ): Promise<string> {
 	const ext = path.extname(file.filename) || ".png";
-	const safeUsername = username.replace(/[^a-zA-Z0-9_-]/g, '');
+	const safeUsername = username.replace(/[^a-zA-Z0-9_-]/g, "");
 	const timestamp = Date.now();
-	const hash = createHash('md5').update(safeUsername + timestamp).digest('hex').substring(0, 8);
+	const hash = createHash("md5")
+		.update(safeUsername + timestamp)
+		.digest("hex")
+		.substring(0, 8);
 
 	const fileName = `${safeUsername}_${hash}${ext}`;
 	const uploadPath = path.join(

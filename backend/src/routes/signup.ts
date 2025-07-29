@@ -129,7 +129,8 @@ async function createUser(
 	prisma: PrismaClient,
 	username: string,
 	hashedPassword: string,
-	avatarPath: string
+	avatarPath: string,
+	emailValue: string
 ) {
 	const existingUser = await prisma.user.findUnique({
 		where: { username }
@@ -143,7 +144,7 @@ async function createUser(
 	// Générer un email unique avec timestamp et random
 	const timestamp = Date.now();
 	const random = Math.random().toString(36).substring(2, 8);
-	const uniqueEmail = `${username}_${timestamp}_${random}@transcendence.local`;
+	const uniqueEmail = emailValue || `${username}_${timestamp}_${random}@transcendence.local`;
 
 	const user = await prisma.user.create({
 		data: {
@@ -173,12 +174,13 @@ export async function registerNewUser(
 		const userInfoForValidation = {
 			username: userData.usernameValue,
 			password: userData.passwordValue,
-			avatar: userData.avatarFile
+			avatar: userData.avatarFile,
+			email: userData.emailValue
 		};
 		console.log("userInfoForValidation: ", userInfoForValidation);
 		const checkResult = UserSignUpCheck(userInfoForValidation);
 		if (checkResult === true){
-			const { usernameValue, hashedPassword, avatarFile } =
+			const { usernameValue, hashedPassword, avatarFile, emailValue } =
 				userData;
 			console.log("AFTER USER SIGNUP CHECK");
 			try {
@@ -189,7 +191,8 @@ export async function registerNewUser(
 					prisma,
 					usernameValue,
 					hashedPassword,
-					avatarPath
+					avatarPath,
+					emailValue || ""
 				);
 
 				console.log("Created user:", created);

@@ -1,3 +1,7 @@
+// Add these imports at the very top of the file:
+import React from "react";
+import ReactDOM from "react-dom/client";
+import TwoFactorVerifyPage from "../pages/TwoFactorVerifyPage";
 
 class Router {
     private routes: Map<string, () => HTMLElement> = new Map();
@@ -93,33 +97,46 @@ class Router {
     }
 
     private async renderRoute(route: string): Promise<void> {
+        console.log("🎯 renderRoute called with route:", route);
+        
         // Check exact routes first
         let routeHandler = this.routes.get(route);
         let routeParams: any = {};
 
+        console.log("🔍 Available routes:", Array.from(this.routes.keys()));
+        console.log("🎮 Route handler found:", !!routeHandler);
+
         // If no exact match, check dynamic routes
         if (!routeHandler) {
+            console.log("🔍 Checking dynamic routes...");
             for (const dynamicRoute of this.dynamicRoutes) {
                 const params = this.extractParams(route, dynamicRoute.pattern);
                 if (params) {
                     routeHandler = dynamicRoute.handler;
                     routeParams = params;
+                    console.log("✅ Dynamic route matched:", dynamicRoute.pattern);
                     break;
                 }
             }
         }
 
         if (!routeHandler) {
+            console.error("❌ No route handler found for:", route);
             this.navigate('/404');
             return;
         }
 
         const app = document.getElementById('app');
         if (app) {
+            console.log("🎨 Rendering route:", route);
             app.innerHTML = '';
             // Store route params globally so components can access them
             (window as any).routeParams = routeParams;
-            app.appendChild(routeHandler());
+            const element = routeHandler();
+            app.appendChild(element);
+            console.log("✅ Route rendered successfully:", route);
+        } else {
+            console.error("❌ App element not found");
         }
     }
 
@@ -165,6 +182,18 @@ class Router {
 			await this.navigateFromHistory(window.location.pathname);
 		});
 	}
+
+    
 }
 
+// Add this helper function after your Router class (before export):
+// function renderReactPage(ReactComponent: React.FC): HTMLElement {
+//     const container = document.createElement("div");
+//     ReactDOM.createRoot(container).render(ReactComponent);
+//     return container;
+// }
+
 export const router = new Router();
+
+// Register the /2fa-verify route (do this in your main entry file or here if you prefer)
+// router.addRoute("/2fa-verify", () => renderReactPage(TwoFactorVerifyPage));

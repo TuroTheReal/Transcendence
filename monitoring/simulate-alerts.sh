@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration du service à tester
-TARGET_SERVICE="${TARGET_SERVICE:-http://localhost:3000}"
+TARGET_SERVICE="${TARGET_SERVICE:-http://localhost:3002}"
 PROMETHEUS_URL="${PROMETHEUS_URL:-http://prometheus:9090}"
 
 # Couleurs pour l'affichage

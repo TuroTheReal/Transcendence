@@ -56,3 +56,8 @@ To run the docker:
 
 - Run the script if you want to reset docker images & containers, be aware, this script will remove
 	all the Docker environment.
+
+
+https://localhost:3000/api/2fa/setup-totp-temp/user
+
+   http://localhost:3000/api/2fa/verify-totp-temp/userr/2fanumber

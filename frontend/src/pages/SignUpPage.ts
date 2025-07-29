@@ -27,6 +27,15 @@ export function createSignUpPage(): HTMLElement {
 					</div>
 					<div>
 						<input 
+							type="text" 
+							placeholder="${i18n.t('signup.email')}" 
+							id="email" 
+							required 
+							class="neon-input"
+						>
+					</div>
+					<div>
+						<input 
 							type="password" 
 							placeholder="${i18n.t('signup.password')}" 
 							id="password" 
@@ -125,12 +134,14 @@ export async function sendSignUpInfo(page: HTMLDivElement): Promise<void> {
 	const usernameInput = page.querySelector("#username") as HTMLInputElement;
 	const passwordInput = page.querySelector("#password") as HTMLInputElement;
 	const avatarInput = page.querySelector("#avatar") as HTMLInputElement;
+	const emailInput = page.querySelector("#email") as HTMLInputElement;
 	const avatar = avatarInput.files?.[0];
 
 	const UserInfo = {
 		username: usernameInput.value,
 		password: passwordInput.value,
 		avatar: avatar,
+		email: emailInput.value,
 	};
 
 	const user = UserInfo;
@@ -139,10 +150,12 @@ export async function sendSignUpInfo(page: HTMLDivElement): Promise<void> {
 	// PRINT DEBUG SIGNUP FORM
 	console.log(`USERNAME: ${user.username}`);
 	console.log(`PASSWORD: ${user.password}`);
+	console.log(`EMAIL: ${user.email}`);
 	// END PRINT DEBUG SIGNUP FORM
 
 	formData.append("username", user.username);
 	formData.append("password", user.password);
+	formData.append("email", user.email);
 	if (user.avatar) formData.append("avatar", user.avatar);
 
 	for (const [key, value] of formData.entries()){
@@ -158,6 +171,7 @@ export async function sendSignUpInfo(page: HTMLDivElement): Promise<void> {
 		
 		console.log(formData.get("username"));
 		console.log(formData.get("password"));
+		console.log(formData.get("email"));
 		console.log(response);
 		
 		if (response.ok){

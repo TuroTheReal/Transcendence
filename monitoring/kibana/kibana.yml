@@ -15,7 +15,7 @@ logging.appenders.file.layout.type: json
 logging.root.appenders: [default, file]
 logging.root.level: info
 
-xpack.security.enabled: true
+# xpack.security.enabled: true
 xpack.reporting.encryptionKey: "${REPORTING_KEY}"
 xpack.security.encryptionKey: "${SECURITY_KEY}"
 xpack.encryptedSavedObjects.encryptionKey: "${SAVED_OBJECTS_KEY}"

@@ -17,10 +17,12 @@ model User {
   passwordHash			String
   avatarUrl				String?
   isTwoFactorEnabled	Boolean		@default(false)
+  twoFactorCode      String?
   connected				Boolean		@default(false)
   twoFactorSecret		String?
-  twoFactorEnabled		Boolean		@default(false)
   twoFactorEnabledAt	DateTime?
+  twoFactorCodeExpires DateTime?
+  twoFactorType String? // 'email' or 'totp'
   gamesPlayed				Int			@default(0)
   losses				Int			@default(0)
   wins					Int			@default(0)

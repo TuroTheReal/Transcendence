@@ -305,7 +305,7 @@ function initializeChat(page: HTMLElement, userData: any) {
 	function connectWebSocket() {
 		// Utiliser l'URL complète du serveur backend
 		ws = new WebSocket(
-			`ws://localhost:3000/ws/chat?username=${encodeURIComponent(userData.username)}&userId=${userData.id}`
+			`wss://localhost:3002/ws/chat?username=${encodeURIComponent(userData.username)}&userId=${userData.id}`
 		);
 
 		ws.onopen = () => {
