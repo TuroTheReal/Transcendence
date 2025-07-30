@@ -51,199 +51,203 @@ const METRICS_PORT = process.env.METRICS_PORT
  * Cette fonction examine plusieurs indicateurs pour déterminer si l'application
  * s'exécute dans un conteneur Docker ou un environnement similaire
  */
-const isRunningInContainer = (): boolean => {
-	try {
-		// Vérifier l'existence du fichier .dockerenv (créé par Docker)
-		if (fs.existsSync('/.dockerenv')) {
-			console.log("🐳 Environnement Docker détecté via .dockerenv");
-			return true;
-		}
+// const isRunningInContainer = (): boolean => {
+// 	try {
+// 		// Vérifier l'existence du fichier .dockerenv (créé par Docker)
+// 		if (fs.existsSync('/.dockerenv')) {
+// 			console.log("🐳 Environnement Docker détecté via .dockerenv");
+// 			return true;
+// 		}
 
-		// Vérifier si nous sommes dans un cgroup Docker/containerd
-		if (fs.existsSync('/proc/1/cgroup')) {
-			const cgroup = fs.readFileSync('/proc/1/cgroup', 'utf8');
-			if (cgroup.includes('docker') || cgroup.includes('containerd')) {
-				console.log("🐳 Environnement containerisé détecté via cgroup");
-				return true;
-			}
-		}
+// 		// Vérifier si nous sommes dans un cgroup Docker/containerd
+// 		if (fs.existsSync('/proc/1/cgroup')) {
+// 			const cgroup = fs.readFileSync('/proc/1/cgroup', 'utf8');
+// 			if (cgroup.includes('docker') || cgroup.includes('containerd')) {
+// 				console.log("🐳 Environnement containerisé détecté via cgroup");
+// 				return true;
+// 			}
+// 		}
 
-		// Vérifier les variables d'environnement Docker communes
-		if (process.env.DOCKER_CONTAINER || process.env.HOSTNAME?.match(/^[a-f0-9]{12}$/)) {
-			console.log("🐳 Environnement containerisé détecté via variables d'environnement");
-			return true;
-		}
+// 		// Vérifier les variables d'environnement Docker communes
+// 		if (process.env.DOCKER_CONTAINER || process.env.HOSTNAME?.match(/^[a-f0-9]{12}$/)) {
+// 			console.log("🐳 Environnement containerisé détecté via variables d'environnement");
+// 			return true;
+// 		}
 
-		return false;
-	} catch (error) {
-		console.log("⚠️ Impossible de détecter l'environnement containerisé, suppose un environnement natif");
-		return false;
-	}
-};
+// 		return false;
+// 	} catch (error) {
+// 		console.log("⚠️ Impossible de détecter l'environnement containerisé, suppose un environnement natif");
+// 		return false;
+// 	}
+// };
 
-/**
- * Tente de récupérer l'IP de l'hôte Docker depuis l'intérieur d'un conteneur
- * Cette fonction utilise plusieurs stratégies pour identifier l'IP de la machine hôte
- */
-const getDockerHostIP = (): string | null => {
-	console.log("🔍 Tentative de détection de l'IP de l'hôte Docker...");
+// /**
+//  * Tente de récupérer l'IP de l'hôte Docker depuis l'intérieur d'un conteneur
+//  * Cette fonction utilise plusieurs stratégies pour identifier l'IP de la machine hôte
+//  */
+// const getDockerHostIP = (): string | null => {
+// 	console.log("🔍 Tentative de détection de l'IP de l'hôte Docker...");
 
-	// Stratégie 1: Variable d'environnement explicite (recommandée)
-	if (process.env.DOCKER_HOST_IP) {
-		console.log(`🎯 IP hôte Docker définie explicitement: ${process.env.DOCKER_HOST_IP}`);
-		return process.env.DOCKER_HOST_IP;
-	}
+// 	// Stratégie 1: Variable d'environnement explicite (recommandée)
+// 	if (process.env.DOCKER_HOST_IP) {
+// 		console.log(`🎯 IP hôte Docker définie explicitement: ${process.env.DOCKER_HOST_IP}`);
+// 		return process.env.DOCKER_HOST_IP;
+// 	}
 
-	try {
-		// Stratégie 2: Analyser la route par défaut pour trouver la gateway
-		// La gateway par défaut dans un conteneur Docker pointe généralement vers l'hôte
-		const routeOutput = execSync('ip route show default', { encoding: 'utf8', timeout: 5000 });
-		const gatewayMatch = routeOutput.match(/default via ([\d.]+)/);
+// 	try {
+// 		// Stratégie 2: Analyser la route par défaut pour trouver la gateway
+// 		// La gateway par défaut dans un conteneur Docker pointe généralement vers l'hôte
+// 		const routeOutput = execSync('ip route show default', { encoding: 'utf8', timeout: 5000 });
+// 		const gatewayMatch = routeOutput.match(/default via ([\d.]+)/);
 
-		if (gatewayMatch && gatewayMatch[1]) {
-			const gateway = gatewayMatch[1];
-			// Éviter les gateways Docker par défaut qui ne sont pas l'hôte réel
-			if (gateway !== '172.17.0.1' && gateway !== '172.18.0.1') {
-				console.log(`🌉 IP hôte détectée via route par défaut: ${gateway}`);
-				return gateway;
-			}
-		}
+// 		if (gatewayMatch && gatewayMatch[1]) {
+// 			const gateway = gatewayMatch[1];
+// 			// Éviter les gateways Docker par défaut qui ne sont pas l'hôte réel
+// 			if (gateway !== '172.17.0.1' && gateway !== '172.18.0.1') {
+// 				console.log(`🌉 IP hôte détectée via route par défaut: ${gateway}`);
+// 				return gateway;
+// 			}
+// 		}
 
-		// Stratégie 3: Examiner la configuration réseau pour trouver l'hôte
-		// Certains setups Docker utilisent des réseaux personnalisés avec des patterns spécifiques
-		const interfaceOutput = execSync('ip addr show', { encoding: 'utf8', timeout: 5000 });
-		const hostNetworkMatch = interfaceOutput.match(/inet ([\d.]+)\/\d+ brd [\d.]+ scope global/);
+// 		// Stratégie 3: Examiner la configuration réseau pour trouver l'hôte
+// 		// Certains setups Docker utilisent des réseaux personnalisés avec des patterns spécifiques
+// 		const interfaceOutput = execSync('ip addr show', { encoding: 'utf8', timeout: 5000 });
+// 		const hostNetworkMatch = interfaceOutput.match(/inet ([\d.]+)\/\d+ brd [\d.]+ scope global/);
 
-		if (hostNetworkMatch && hostNetworkMatch[1] && !hostNetworkMatch[1].startsWith('172.')) {
-			console.log(`🏠 IP hôte potentielle détectée via interfaces réseau: ${hostNetworkMatch[1]}`);
-			return hostNetworkMatch[1];
-		}
+// 		if (hostNetworkMatch && hostNetworkMatch[1] && !hostNetworkMatch[1].startsWith('172.')) {
+// 			console.log(`🏠 IP hôte potentielle détectée via interfaces réseau: ${hostNetworkMatch[1]}`);
+// 			return hostNetworkMatch[1];
+// 		}
 
-	} catch (error) {
-		console.log("⚠️ Impossible d'exécuter les commandes de détection réseau:", (error as Error).message);
-	}
+// 	} catch (error) {
+// 		console.log("⚠️ Impossible d'exécuter les commandes de détection réseau:", (error as Error).message);
+// 	}
 
-	console.log("❌ Aucune IP hôte Docker détectée automatiquement");
-	return null;
-};
+// 	console.log("❌ Aucune IP hôte Docker détectée automatiquement");
+// 	return null;
+// };
 
-/**
- * Fonction principale de détection d'IP accessible
- * Cette fonction orchestre la détection d'IP en fonction de l'environnement d'exécution
- */
-const getAccessibleIP = (): string => {
-	const networkInterfaces = os.networkInterfaces();
-	const candidateIPs: Array<{
-		ip: string;
-		interface: string;
-		priority: number;
-		source: string; // Ajout d'un champ pour tracer la source de l'IP
-	}> = [];
+// /**
+//  * Fonction principale de détection d'IP accessible
+//  * Cette fonction orchestre la détection d'IP en fonction de l'environnement d'exécution
+//  */
+// const getAccessibleIP = (): string => {
+// 	const networkInterfaces = os.networkInterfaces();
+// 	const candidateIPs: Array<{
+// 		ip: string;
+// 		interface: string;
+// 		priority: number;
+// 		source: string; // Ajout d'un champ pour tracer la source de l'IP
+// 	}> = [];
 
-	console.log("🔍 Analyse des interfaces réseau disponibles:");
+// 	console.log("🔍 Analyse des interfaces réseau disponibles:");
 
-	for (const interfaceName in networkInterfaces) {
-		const interfaces = networkInterfaces[interfaceName];
-		if (interfaces) {
-			for (const iface of interfaces) {
-				if (!iface.internal && iface.family === "IPv4") {
-					let priority = 0;
-					let source = "interface réseau";
+// 	for (const interfaceName in networkInterfaces) {
+// 		const interfaces = networkInterfaces[interfaceName];
+// 		if (interfaces) {
+// 			for (const iface of interfaces) {
+// 				if (!iface.internal && iface.family === "IPv4") {
+// 					let priority = 0;
+// 					let source = "interface réseau";
 
-					// Priorisation intelligente basée sur le type d'interface
-					if (interfaceName.startsWith("eth") || interfaceName.startsWith("eno")) {
-						priority += 100; // Interface Ethernet physique (priorité maximale)
-						source = "Ethernet physique";
-					} else if (interfaceName.startsWith("ens")) {
-						priority += 95; // Interface Ethernet moderne
-						source = "Ethernet moderne";
-					} else if (interfaceName.startsWith("wl") || interfaceName.includes("wifi")) {
-						priority += 80; // Interface WiFi
-						source = "WiFi";
-					}
+// 					// Priorisation intelligente basée sur le type d'interface
+// 					if (interfaceName.startsWith("eth") || interfaceName.startsWith("eno")) {
+// 						priority += 100; // Interface Ethernet physique (priorité maximale)
+// 						source = "Ethernet physique";
+// 					} else if (interfaceName.startsWith("ens")) {
+// 						priority += 95; // Interface Ethernet moderne
+// 						source = "Ethernet moderne";
+// 					} else if (interfaceName.startsWith("wl") || interfaceName.includes("wifi")) {
+// 						priority += 80; // Interface WiFi
+// 						source = "WiFi";
+// 					}
 
-					// Pénaliser les interfaces virtuelles/Docker
-					if (interfaceName.startsWith("docker") || interfaceName.startsWith("br-")) {
-						priority -= 50;
-						source = "Docker (évité)";
-					}
-					if (interfaceName.startsWith("veth") || interfaceName.startsWith("virbr")) {
-						priority -= 30;
-						source = "Interface virtuelle (évitée)";
-					}
+// 					// Pénaliser les interfaces virtuelles/Docker
+// 					if (interfaceName.startsWith("docker") || interfaceName.startsWith("br-")) {
+// 						priority -= 50;
+// 						source = "Docker (évité)";
+// 					}
+// 					if (interfaceName.startsWith("veth") || interfaceName.startsWith("virbr")) {
+// 						priority -= 30;
+// 						source = "Interface virtuelle (évitée)";
+// 					}
 
-					// Bonus pour les plages d'IP privées standard
-					if (iface.address.startsWith("192.168.")) {
-						priority += 50;
-						source += " (réseau domestique)";
-					} else if (iface.address.startsWith("10.")) {
-						priority += 45;
-						source += " (réseau d'entreprise)";
-					} else if (iface.address.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./)) {
-						priority += 40;
-						source += " (réseau privé)";
-					}
+// 					// Bonus pour les plages d'IP privées standard
+// 					if (iface.address.startsWith("192.168.")) {
+// 						priority += 50;
+// 						source += " (réseau domestique)";
+// 					} else if (iface.address.startsWith("10.")) {
+// 						priority += 45;
+// 						source += " (réseau d'entreprise)";
+// 					} else if (iface.address.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./)) {
+// 						priority += 40;
+// 						source += " (réseau privé)";
+// 					}
 
-					candidateIPs.push({
-						ip: iface.address,
-						interface: interfaceName,
-						priority: priority,
-						source: source
-					});
+// 					candidateIPs.push({
+// 						ip: iface.address,
+// 						interface: interfaceName,
+// 						priority: priority,
+// 						source: source
+// 					});
 
-					console.log(`   📡 ${interfaceName}: ${iface.address} (priorité: ${priority}, source: ${source})`);
-				}
-			}
-		}
-	}
+// 					console.log(`   📡 ${interfaceName}: ${iface.address} (priorité: ${priority}, source: ${source})`);
+// 				}
+// 			}
+// 		}
+// 	}
 
-	if (candidateIPs.length > 0) {
-		// Trier par priorité décroissante et sélectionner la meilleure
-		candidateIPs.sort((a, b) => b.priority - a.priority);
-		const bestIP = candidateIPs[0];
-		console.log(`🎯 IP sélectionnée: ${bestIP.ip} (interface: ${bestIP.interface}, source: ${bestIP.source})`);
-		return bestIP.ip;
-	}
+// 	if (candidateIPs.length > 0) {
+// 		// Trier par priorité décroissante et sélectionner la meilleure
+// 		candidateIPs.sort((a, b) => b.priority - a.priority);
+// 		const bestIP = candidateIPs[0];
+// 		console.log(`🎯 IP sélectionnée: ${bestIP.ip} (interface: ${bestIP.interface}, source: ${bestIP.source})`);
+// 		return bestIP.ip;
+// 	}
 
-	console.log("⚠️ Aucune IP externe détectée, utilisation de localhost");
-	return "localhost";
-};
+// 	console.log("⚠️ Aucune IP externe détectée, utilisation de localhost");
+// 	return "localhost";
+// };
 
-/**
- * Fonction intelligente de détermination de l'IP publique
- * Cette fonction coordonne toutes les stratégies de détection d'IP selon l'environnement
- */
-const determinePublicIP = (): string => {
-	console.log("🌐 === DÉTECTION INTELLIGENTE DE L'IP PUBLIQUE ===");
+// /**
+//  * Fonction intelligente de détermination de l'IP publique
+//  * Cette fonction coordonne toutes les stratégies de détection d'IP selon l'environnement
+//  */
+// const determinePublicIP = (): string => {
+// 	console.log("🌐 === DÉTECTION INTELLIGENTE DE L'IP PUBLIQUE ===");
 
-	// Priorité 1: IP définie manuellement dans l'environnement
-	if (process.env.PUBLIC_IP && process.env.PUBLIC_IP !== "auto") {
-		console.log(`🎯 Utilisation de l'IP définie manuellement: ${process.env.PUBLIC_IP}`);
-		return process.env.PUBLIC_IP;
-	}
+// 	// Priorité 1: IP définie manuellement dans l'environnement
+// 	if (process.env.PUBLIC_IP && process.env.PUBLIC_IP !== "auto") {
+// 		console.log(`🎯 Utilisation de l'IP définie manuellement: ${process.env.PUBLIC_IP}`);
+// 		return process.env.PUBLIC_IP;
+// 	}
 
-	// Priorité 2: Détection automatique selon l'environnement
-	const inContainer = isRunningInContainer();
+// 	// Priorité 2: Détection automatique selon l'environnement
+// 	const inContainer = isRunningInContainer();
 
-	if (inContainer) {
-		console.log("🐳 Environnement containerisé détecté - recherche de l'IP hôte...");
-		const dockerHostIP = getDockerHostIP();
+// 	if (inContainer) {
+// 		console.log("🐳 Environnement containerisé détecté - recherche de l'IP hôte...");
+// 		const dockerHostIP = getDockerHostIP();
 
-		if (dockerHostIP) {
-			console.log(`✅ IP hôte Docker trouvée: ${dockerHostIP}`);
-			return dockerHostIP;
-		} else {
-			console.log("⚠️ IP hôte Docker non trouvée, utilisation de l'IP du conteneur");
-			return getAccessibleIP();
-		}
-	} else {
-		console.log("🖥️ Environnement natif détecté - utilisation des interfaces système");
-		return getAccessibleIP();
-	}
-};
+// 		if (dockerHostIP) {
+// 			console.log(`✅ IP hôte Docker trouvée: ${dockerHostIP}`);
+// 			return dockerHostIP;
+// 		} else {
+// 			console.log("⚠️ IP hôte Docker non trouvée, utilisation de l'IP du conteneur");
+// 			return getAccessibleIP();
+// 		}
+// 	} else {
+// 		console.log("🖥️ Environnement natif détecté - utilisation des interfaces système");
+// 		return getAccessibleIP();
+// 	}
+// };
 
-// Configuration IP intelligente utilisant la nouvelle fonction
-const PUBLIC_IP: string = determinePublicIP();
+// // Configuration IP intelligente utilisant la nouvelle fonction
+// const PUBLIC_IP: string = determinePublicIP();
+
+
+const PUBLIC_IP = process.env.PUBLIC_IP || "127.0.0.1";
+
 
 const prisma = new PrismaClient();
 
@@ -490,7 +494,7 @@ const setupMainServer = async () => {
 			version: process.env.npm_package_version || "1.0.0",
 			ssl: httpsOptions ? "enabled" : "disabled",
 			metrics_server: `http://${PUBLIC_IP}:${METRICS_PORT}/metrics`,
-			environment: isRunningInContainer() ? "containerized" : "native",
+			// environment: isRunningInContainer() ? "containerized" : "native",
 			detected_ip: PUBLIC_IP,
 		};
 	});
@@ -516,7 +520,7 @@ const setupMetricsServer = async () => {
 			status: "ok",
 			service: "metrics-server",
 			timestamp: new Date().toISOString(),
-			environment: isRunningInContainer() ? "containerized" : "native",
+			// environment: isRunningInContainer() ? "containerized" : "native",
 		};
 	});
 
