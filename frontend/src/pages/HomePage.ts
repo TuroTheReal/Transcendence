@@ -40,7 +40,7 @@ export function createHomePage(): HTMLElement {
 		if (languageSwitcherContainer) {
 			languageSwitcherContainer.appendChild(createLanguageSwitcher());
 		}
-		
+
 		const logoutContainer = page.querySelector('#logout-container');
 		if (logoutContainer)
 			logoutContainer?.appendChild(createLogoutSwitcher());

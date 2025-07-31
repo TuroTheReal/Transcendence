@@ -1,10 +1,11 @@
+# version fusionne
 services:
 
 
-#  Test alerte prometheus
-# ip public
-# MAJ pour connected user
-# logger a check
+# Test alerte prometheus, email ?
+# push .pem ? .env ?
+# logger a check apres avoir enlever les consoles logs
+
 
   dev:
     user: "0:0"
@@ -18,7 +19,7 @@ services:
       - /app/node_modules
     ports:
       # - "5173:5173"
-      - "${MAIN_PORT}:3000"
+      - "${MAIN_PORT}:3002"
       - "${METRICS_PORT}:3001"
       - "${HTTP_REDIRECT_PORT}:8080"
     environment:
@@ -78,6 +79,7 @@ services:
   #   networks:
   #     - app-network
   #   restart: unless-stopped
+
 
   elasticsearch:
     # user: "0:0"

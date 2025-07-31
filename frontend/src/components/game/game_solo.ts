@@ -1,5 +1,8 @@
+import { i18n } from "../../services/i18n.js";
 
 // -------------------------- INTERFACES ------------------------------------
+
+import { json } from "stream/consumers";
 
 interface game_config
 {
@@ -81,13 +84,14 @@ interface ia_interface
 interface data_score
 {
     id: number;
-    player1Id: string | null;
-    ia_mode: boolean;
-    winnerId: string | null;
+    player1Id: number | null;
+	player2Id?: number | null;
+    winnerId: number | null;
     score1: number;
     score2: number;
-    tournoi_mode: boolean;
-    multi_mode: boolean;
+    iaMode: boolean;
+    tournamentMode: boolean;
+    multiMode: boolean;
     played_at: Date;
     game_time: number;
     win_point_up: number;
@@ -109,19 +113,19 @@ function get_random_playable_angle(): number
         angle = Math.random() * 2 * Math.PI;
 
         const is_too_vertical = (
-        (angle >= 1 && angle <= 2.1) ||   
-        (angle >= 4.4 && angle <= 5.1)   
+        (angle >= 1 && angle <= 2.1) ||
+        (angle >= 4.4 && angle <= 5.1)
         );
 
         const is_too_horizontal = (
-        (angle >= 0 && angle <= 0.4) ||                
-        (angle >= 2 * Math.PI - 0.4 && angle <= 2 * Math.PI) || 
-        (angle >= Math.PI - 0.4 && angle <= Math.PI + 0.4) 
+        (angle >= 0 && angle <= 0.4) ||
+        (angle >= 2 * Math.PI - 0.4 && angle <= 2 * Math.PI) ||
+        (angle >= Math.PI - 0.4 && angle <= Math.PI + 0.4)
         );
 
-        if (is_too_vertical || is_too_horizontal) 
+        if (is_too_vertical || is_too_horizontal)
             continue;
-    
+
         return angle;
     }
 }
@@ -135,7 +139,7 @@ function create_ID(): number
 function random_number(min: number, max: number): number
 {
     let num = 0;
-    
+
     while(true)
     {
         num = Math.random();
@@ -211,8 +215,15 @@ class Pong
             this.player_name =  userId;
         }
         else
-            this.player_name = "Joueur 1";
-        
+        {
+            if (i18n.getCurrentLanguage() == "en")
+                this.player_name = "PLAYER 1";
+            else if (i18n.getCurrentLanguage() == "fr")
+                this.player_name = "JOUEUR 1";
+            else
+                this.player_name = "JUGADOR 1";
+        }
+
 
         this.config =
         {
@@ -224,7 +235,7 @@ class Pong
             ball_speed: 4.5 * (3/2),
             ball_max_speed: 12 * (3/2),
             paddle_speed: 7.5 * (3/2),
-            score_to_win: 5,
+            score_to_win: 1,
             increase_vitesse: 175, //250,
             time_before_new_ball: 3000
         }
@@ -291,14 +302,15 @@ class Pong
             error_percent: 0.2
         }
 
-        this.data = 
+        this.data =
         {
             id: 0,
-            player1Id: "default",
-            ia_mode: false,
-            tournoi_mode: false,
-            multi_mode: false,
-            winnerId: "default",
+            player1Id: null,
+			player2Id: null,
+			iaMode: false,
+			tournamentMode: false,
+			multiMode: false,
+            winnerId: null,
             score1: 0,
             score2: 0,
             played_at: new Date(),
@@ -334,32 +346,48 @@ class Pong
         this.keys_pressed[e.key] = false;
     };
 
-    start(): void
-    {
-        this.draw(1);
-        //console.log("ca demarre");
-        let countdown = 3;
-        this.count_down.innerText = `Debut de partie dans`;
-        setTimeout(() => 
-        {
-            this.state.count_down_active = true;
+    start(): void {
+        // Vérifier et récupérer l'élément countdown au moment où on en a besoin
+        this.ensureCountdownElement();
 
-            if (!this.count_down)
-            {
-                //console.error("Element countdown non trouve");
+        if (!this.count_down) {
+            //console.error("Impossible de démarrer : élément countdown introuvable");
+            return;
+        }
+
+        this.draw(1);
+        let countdown = 3;
+
+        if (i18n.getCurrentLanguage() == "en")
+            this.count_down.innerText = `The game will start in`;
+        else if (i18n.getCurrentLanguage() == "fr")
+            this.count_down.innerText = `Debut de partie dans`;
+        else
+            this.count_down.innerText = `El partido empieza en`;
+
+        setTimeout(() => {
+            // Vérifier à nouveau avant d'utiliser l'élément
+            if (!this.count_down) {
+                //console.error("Élément countdown perdu pendant le setTimeout");
                 return;
             }
 
+            this.state.count_down_active = true;
             this.count_down.innerText = `${countdown}`;
 
-            let count_down_interval = setInterval(() =>
-            {
+            let count_down_interval = setInterval(() => {
                 countdown--;
 
-                if (countdown > 0)
+                // Vérification à chaque itération
+                if (!this.count_down) {
+                    //console.error("Élément countdown perdu pendant le countdown");
+                    clearInterval(count_down_interval);
+                    return;
+                }
+
+                if (countdown > 0) {
                     this.count_down.innerText = `${countdown}`;
-                else
-                {
+                } else {
                     clearInterval(count_down_interval);
                     this.count_down.innerText = "";
                     this.state.count_down_active = false;
@@ -370,6 +398,55 @@ class Pong
             }, 1000);
         }, 1000);
     }
+
+    // Nouvelle méthode pour s'assurer que l'élément existe
+    private ensureCountdownElement(): void {
+        if (!this.count_down) {
+            //console.log("Récupération de l'élément countdown...");
+            this.count_down = document.getElementById("countdowndisplay") as HTMLDivElement;
+        }
+    }
+
+    // start(): void
+    // {
+    //     this.draw(1);
+    //     //console.log("ca demarre");
+    //     let countdown = 3;
+
+    //     if (i18n.getCurrentLanguage() == "en")
+    //         this.count_down.innerText = `The game will start in`;
+    //     else
+    //         this.count_down.innerText = `Debut de partie dans`;
+    //     setTimeout(() =>
+    //     {
+    //         this.state.count_down_active = true;
+
+    //         if (!this.count_down)
+    //         {
+    //             //console.error("Element countdown non trouve");
+    //             return;
+    //         }
+
+    //         this.count_down.innerText = `${countdown}`;
+
+    //         let count_down_interval = setInterval(() =>
+    //         {
+    //             countdown--;
+
+    //             if (countdown > 0)
+    //                 this.count_down.innerText = `${countdown}`;
+    //             else
+    //             {
+    //                 clearInterval(count_down_interval);
+    //                 this.count_down.innerText = "";
+    //                 this.state.count_down_active = false;
+    //                 this.start_time = performance.now();
+    //                 this.last_frame_time = performance.now();
+    //                 this.game_loop();
+    //             }
+    //         }, 1000);
+    //     }, 1000);
+    // }
 
 
     game_loop(): void
@@ -389,7 +466,7 @@ class Pong
 
         if (raw_delta_time > 250)
             console.warn(`Spirale de la mort évitée ! Temps réel: ${raw_delta_time.toFixed(2)}ms, temps traité: ${delta_time}ms`);
-        
+
 
         this.last_frame_time = current_time;
         this.accumulator += delta_time;
@@ -418,7 +495,7 @@ class Pong
                 this.update_paddle();
                 this.update_ball();
                 //this.draw();
-                
+
             }
             this.accumulator -= this.fixed_timestep;
             //frame_fois++;
@@ -437,15 +514,30 @@ class Pong
 
     end_game(): void
     {
+		console.log("END GAME");
         let message = '';
         this.handle_data();
+		console.log("DATA HANDLED");
         setTimeout(() =>
         {
             if (this.state.left_score == this.config.score_to_win)
-                message = '🏆 Joueur 1 gagne la partie !';
+            {
+                if (i18n.getCurrentLanguage() == "en")
+                    message = '🏆 Player 1 win the game !';
+                else if (i18n.getCurrentLanguage() == "fr")
+                    message = '🏆 Joueur 1 gagne la partie !';
+                else
+                    message = '🏆 Jugador 1 gana el partido !';
+            }
             else
-                message = '🏆 Joueur 2 gagne la partie !';
-
+            {
+                if (i18n.getCurrentLanguage() == "en")
+                    message = '🏆 Player 2 win the game !';
+                else if (i18n.getCurrentLanguage() == "fr")
+                    message = '🏆 Joueur 2 gagne la partie !';
+                else
+                    message = '🏆 Jugador 2 gana el partido !';
+            }
             if (this.end_message)
             {
                 this.end_message.textContent = message;
@@ -453,31 +545,46 @@ class Pong
             }
         }, 1000);
         this.state.game_running = false;
-    }   
+    }
 
-    handle_data()
+    async handle_data()
     {
         const token = sessionStorage.getItem("authToken");
         if (!token)
             return;
-        const userId = sessionStorage.getItem("userId");
+		const currentUserStr = sessionStorage.getItem("currentUser");
+		let currentUser;
+		let userId: number | null = null;
+		if (currentUserStr) {
+			currentUser = JSON.parse(currentUserStr);
+			userId = currentUser.id;
+		}
+		console.log("USER ID: ", userId);
         this.data.player1Id = userId;
+		console.log("PLAYER ID: ", this.data.player1Id);
 
         this.data.id = create_ID();
 
-        if (this.state.ia_mode == true)
-            this.data.ia_mode = true;
-
-
+		if (this.state.game_mode === "solo") {
+			this.data.iaMode = true;
+			this.data.multiMode = false;
+			this.data.player2Id = null;
+		} else {
+			this.data.iaMode = false;
+			this.data.multiMode = true;
+			this.data.player2Id = null;
+		}
 
         this.data.score1 = this.state.left_score;
         this.data.score2 = this.state.right_score;
-        if (this.data.score1 > this.data.score2)
-            this.data.winnerId = this.data.player1Id;
 
+		if (this.data.score1 > this.data.score2) {
+			this.data.winnerId = this.data.player1Id;
+		} else {
+			this.data.winnerId = this.data.player2Id; // ou null pour l'IA
+		}
 
-        this.data.tournoi_mode = false;
-        this.data.multi_mode = false;
+		this.data.tournamentMode = false;
         this.data.played_at = new Date();
 
         // mesure de la duree
@@ -485,48 +592,77 @@ class Pong
         let t1 = performance.now();
         this.data.game_time = t1 - t0;
 
-        //console.log("DATA ENVOYE AU BACKEND !")
-    
-        // const response = await fetch("/api/game/add", {
-        //     method: "POST",
-        //     ContentType: {
-        //         "application/json",
-        //     }
-        //     body?: this.data,
-        // }
+        console.log("DATA ENVOYE AU BACKEND !")
 
-        // )
+		console.log("DATA : ", this.data);
+        const response = await fetch("/api/game/add", {
+            method: "POST",
+            headers: {
+				"Content-Type": "application/json",
+				"Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                players: this.data.iaMode ? 1 : 2,
+                player1Id: this.data.player1Id,
+                player2Id: this.data.player2Id,
+                score1: this.data.score1,
+                score2: this.data.score2,
+                winnerId: this.data.winnerId,
+                playedAt: this.data.played_at,
+                lasted: Math.round(this.data.game_time / 1000 / 60), // En millisecondes
+                pointsUp: this.data.win_point_up,
+                pointsDown: this.data.win_point_down,
+                iaMode: this.data.iaMode,
+                tournamentMode: this.data.tournamentMode,
+                multiMode: this.data.multiMode
+            }),
+        });
+		console.log("RESPONSE : ", response.body);
+		console.log('Game Stats send!');
+		const stats = await fetch(`/api/game/stats?username=${currentUser.username}`, {
+		method: "GET",
+		headers: {
+			"Content-Type": "application/json",
+			"Authorization": `Bearer ${token}`
+		},
+		});
+		if (stats.ok) {
+			const statsdata = await stats.json();
+			console.log('Stats retreived:', statsdata);
+		} else {
+			console.log('Game Stats error!');
+		}
     }
 
 
     cleanup(): void
     {
         console.log("🧹 Nettoyage des ressources du jeu...");
-        
+
         this.clear_all_timers();
         this.state.game_running = false;
         this.state.is_paused = true;
         this.state.count_down_active = false;
-        
+
         this.ball.ball_x = this.config.canvas_width / 2;
         this.ball.ball_y = this.config.canvas_height / 2;
         this.ball.ball_dir_x = 0;
         this.ball.ball_dir_y = 0;
-        
+
         this.paddle.left_paddle_y = (this.config.canvas_height - this.config.paddle_height) / 2;
         this.paddle.right_paddle_y = (this.config.canvas_height - this.config.paddle_height) / 2;
-        
+
         this.update_score(0);
-        
+
         if (this.count_down) {
             this.count_down.innerText = "";
         }
-        
+
         if (this.end_message) {
             this.end_message.style.display = 'none';
             this.end_message.textContent = '';
         }
-        
+
         this.ctx.clearRect(0, 0, this.config.canvas_width, this.config.canvas_height);
         console.log("✅ Nettoyage terminé");
     }
@@ -534,11 +670,11 @@ class Pong
     back_to_menu(): void
     {
         console.log("🏠 Retour au menu principal...");
-        
+
         this.cleanup();
         this.state.restart_active = false;
         this.state.ia_mode = false;
-        
+
         this.ia.service = true;
         this.ia.continue_flag = true;
         this.ia.counter = 0;
@@ -548,7 +684,7 @@ class Pong
         this.ia.move_flag = false;
         this.ia.super_flag = true;
         this.ia.random_paddle_move = false;
-        
+
         this.data.id = 0;
         this.data.player1Id = "default";
         this.data.ia_mode = false;
@@ -563,57 +699,60 @@ class Pong
         this.data.win_point_up = 0;
         this.data.lose_point_down = 0;
         this.data.lose_point_up = 0;
-        
+
         this.config.ball_speed = 4.5 * (3/2);
         this.config.paddle_speed = 7.5 * (3/2);
-        
+
         console.log("✅ Retour au menu préparé");
     }
 
     destroy(): void
     {
         console.log("💥 Destruction de l'instance de jeu...");
-        
+
         this.cleanup();
         document.removeEventListener("keydown", this.handle_keydown);
         document.removeEventListener("keyup", this.handle_keyup);
-        
+
         this.ctx.clearRect(0, 0, this.config.canvas_width, this.config.canvas_height);
         this.count_down = null as any;
         this.end_message = null;
         this.keys_pressed = {};
         this.state.game_running = false;
-        
+
         console.log("✅ Instance détruite");
     }
 
     restart(): void
     {
         console.log("🔄 RESTART demandé");
-        
+
         this.clear_all_timers();
-        
+
         this.state.restart_active = true;
         if (this.end_message)
             this.end_message.style.display = 'none';
         this.state.is_paused = true;
         this.state.count_down_active = false;
-        this.state.game_running = true; 
+        this.state.game_running = true;
         this.last_frame_time = performance.now();
-        
+
         this.ball.ball_dir_x = 0;
         this.ball.ball_dir_y = 0;
-        
+
         this.update_score(0);
         this.config.ball_speed = 4.5 * (3/2);
         this.config.paddle_speed = 8.5 * (3/2);
-        
-        this.count_down.innerText = "Nouvelle partie...";
-        
+
+        if (i18n.getCurrentLanguage() == "en")
+            this.count_down.innerText = "New game...";
+        else
+            this.count_down.innerText = "Nouvelle partie...";
+
         this.restart_timeout = setTimeout(() =>
         {
             console.log("🚀 Nouvelle partie");
-            
+
             this.last_frame_time = performance.now();
             this.ball.ball_x = this.config.canvas_width / 2;
             this.ball.ball_y = this.config.canvas_height / 2;
@@ -627,35 +766,35 @@ class Pong
     }
 
     clear_all_timers(): void
-    {        
+    {
         if (this.countdown_interval)
         {
             clearInterval(this.countdown_interval);
             this.countdown_interval = null;
             //console.log("✅ Countdown interval nettoyé");
         }
-        
+
         if (this.restart_timeout)
         {
             clearTimeout(this.restart_timeout);
             this.restart_timeout = null;
             //console.log("✅ Restart timeout nettoyé");
         }
-        
+
         if (this.goal_timeout)
         {
             clearTimeout(this.goal_timeout);
             this.goal_timeout = null;
             //console.log("✅ Goal timeout nettoyé");
         }
-        
+
         if (this.start_timeout)
         {
             clearTimeout(this.start_timeout);
             this.start_timeout = null;
             //console.log("✅ Start timeout nettoyé");
         }
-        
+
         // Annule aussi l'animation frame si nécessaire
         if (this.animation_id)
         {
@@ -668,36 +807,42 @@ class Pong
     start_count_down_for_restart(): void
     {
         let countdown = 3;
-        this.count_down.innerText = `Reprise dans : ${countdown}`;
+        if (i18n.getCurrentLanguage() == "en")
+            this.count_down.innerText = `Start in : ${countdown}`;
+        else
+            this.count_down.innerText = `Reprise dans : ${countdown}`;
         this.state.count_down_active = true;
-        
+
         this.countdown_interval = setInterval(() => {
             countdown--;
-            
+
             if (this.state.restart_active)
             {
                 //console.log("⚠️ Restart annulé pendant le countdown");
                 return;
             }
-            
+
             if (countdown > 0)
             {
-                this.count_down.innerText = `Reprise dans : ${countdown}`;
+                if (i18n.getCurrentLanguage() == "en")
+                    this.count_down.innerText = `Start in : ${countdown}`;
+                else
+                    this.count_down.innerText = `Reprise dans : ${countdown}`;
                 //console.log(`⏰ Countdown : ${countdown}`);
             }
             else
             {
                 //console.log("🎮 Fin du countdown, reprise du jeu");
-                
+
                 clearInterval(this.countdown_interval!);
                 this.countdown_interval = null;
                 this.count_down.innerText = "";
                 this.state.count_down_active = false;
-                
+
                 this.init_ball_direction();
                 this.start_time = performance.now();
                 this.state.is_paused = false;
-                
+
                 if (this.state.game_running)
                 {
                     this.last_frame_time = performance.now();
@@ -731,27 +876,27 @@ class Pong
         lineEnd: { x: number; y: number },
         rect: { x: number; y: number; width: number; height: number }
     ): { collision: boolean; intersectionPoint?: { x: number; y: number } } {
-        
+
 
         if (lineEnd.x >= rect.x && lineEnd.x <= rect.x + rect.width &&
             lineEnd.y >= rect.y && lineEnd.y <= rect.y + rect.height) {
             return { collision: true, intersectionPoint: lineEnd };
         }
-        
+
         const rectLines = [
             { start: { x: rect.x, y: rect.y }, end: { x: rect.x, y: rect.y + rect.height } },
             { start: { x: rect.x + rect.width, y: rect.y }, end: { x: rect.x + rect.width, y: rect.y + rect.height } },
             { start: { x: rect.x, y: rect.y }, end: { x: rect.x + rect.width, y: rect.y } },
             { start: { x: rect.x, y: rect.y + rect.height }, end: { x: rect.x + rect.width, y: rect.y + rect.height } }
         ];
-        
+
         for (const rectLine of rectLines) {
             const intersection = this.getLineIntersection(lineStart, lineEnd, rectLine.start, rectLine.end);
             if (intersection) {
                 return { collision: true, intersectionPoint: intersection };
             }
         }
-        
+
         return { collision: false };
     }
 
@@ -760,25 +905,25 @@ class Pong
         p1: { x: number; y: number }, p2: { x: number; y: number },
         p3: { x: number; y: number }, p4: { x: number; y: number }
     ): { x: number; y: number } | null {
-        
+
         const x1 = p1.x, y1 = p1.y;
         const x2 = p2.x, y2 = p2.y;
         const x3 = p3.x, y3 = p3.y;
         const x4 = p4.x, y4 = p4.y;
-        
+
         const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
         if (Math.abs(denom) < 1e-10) return null;
-        
+
         const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
         const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
-        
+
         if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
             return {
                 x: x1 + t * (x2 - x1),
                 y: y1 + t * (y2 - y1)
             };
         }
-        
+
         return null;
     }
 
@@ -807,10 +952,10 @@ class Pong
         }
 
         // verification collision avant de mttre a jour les coordonnes
-        
+
         // Collision avec le paddle gauche
         if (this.ball.ball_dir_x < 0)
-        { 
+        {
             const leftPaddleRect =
             {
                 x: 25,
@@ -818,24 +963,24 @@ class Pong
                 width: 15, // De x=25 à x=40
                 height: this.config.paddle_height + (this.paddle.marge * 2)
             };
-            
+
             const leftCollision = this.checkLineRectCollision(
                 { x: previousX, y: previousY },
                 { x: newX, y: newY },
                 leftPaddleRect
             );
-            
+
             if (leftCollision.collision)
             {
                 console.log(`🏓 Rebond raquette gauche détecté par collision continue`);
-                
+
                 // Positionner la balle au point d'intersection pour éviter qu'elle reste dans le paddle
                 if (leftCollision.intersectionPoint)
                 {
                     this.ball.ball_x = leftCollision.intersectionPoint.x;
                     this.ball.ball_y = leftCollision.intersectionPoint.y;
                 }
-                
+
                 // Appliquer la logique de rebond
                 if (this.config.ball_speed < this.config.ball_real_speed)
                 {
@@ -843,7 +988,7 @@ class Pong
                 }
                 this.update_ball_dir(0);
                 this.normalize_ball_speed();
-                
+
                 if (this.state.game_mode == "solo")
                 {
                     this.state.ia_mode = true;
@@ -859,7 +1004,7 @@ class Pong
         }
 
         // Collision avec le paddle droit
-        if (this.ball.ball_dir_x > 0) 
+        if (this.ball.ball_dir_x > 0)
         {
             const rightPaddleRect =
             {
@@ -868,24 +1013,24 @@ class Pong
                 width: 15,
                 height: this.config.paddle_height + (this.paddle.marge * 2)
             };
-            
+
             const rightCollision = this.checkLineRectCollision(
                 { x: previousX, y: previousY },
                 { x: newX, y: newY },
                 rightPaddleRect
             );
-            
+
             if (rightCollision.collision)
             {
                 console.log(`🏓 Rebond raquette droite détecté par collision continue`);
-                
+
                 // Positionner la balle au point d'intersection
                 if (rightCollision.intersectionPoint)
                 {
                     this.ball.ball_x = rightCollision.intersectionPoint.x;
                     this.ball.ball_y = rightCollision.intersectionPoint.y;
                 }
-                
+
                 // Appliquer la logique de rebond
                 if (this.config.ball_speed < this.config.ball_real_speed)
                 {
@@ -893,7 +1038,7 @@ class Pong
                 }
                 this.update_ball_dir(1);
                 this.normalize_ball_speed();
-                
+
                 if (this.state.game_mode == "solo")
                 {
                     this.state.ia_mode = false;
@@ -951,7 +1096,7 @@ class Pong
             }
 
             console.log(`APRES rebond avec ball_x = ${this.ball.ball_x} et ball_y = ${this.ball.ball_y}`);
-            
+
             this.ball.ball_dir_y *= -1;
             this.ball.current_rebond++;
             this.normalize_ball_speed();
@@ -1035,21 +1180,28 @@ class Pong
         if (score_P1)
             score_P1.textContent = `${this.player_name} : ${this.state.left_score}`;
         if (score_P2)
-            score_P2.textContent = `Joueur 2 : ${this.state.right_score}`;
+        {
+            if (i18n.getCurrentLanguage() == "en")
+                score_P2.textContent = `PLAYER 2 : ${this.state.right_score}`;
+            else if (i18n.getCurrentLanguage() == "fr")
+                score_P2.textContent = `JOUEUR 2 : ${this.state.right_score}`;
+            else
+                score_P2.textContent = `JUGADOR 2 : ${this.state.right_score}`;
+        }
     }
 
     // Fonction start_count_down corrigée (après un but)
     start_count_down(): void
-    {        
+    {
         let countdown = 3;
-        
+
         // Vérifier qu'on n'est pas en train de redémarrer
         if (this.state.restart_active)
         {
             //console.log("⚠️ Countdown annulé car restart actif");
             return;
         }
-        
+
         this.goal_timeout = setTimeout(() =>
         {
             // Double vérification
@@ -1058,24 +1210,35 @@ class Pong
                 //console.log("⚠️ Timeout de but annulé car restart actif");
                 return;
             }
-            
+
             this.state.count_down_active = true;
-            this.count_down.innerText = `Reprise dans : ${countdown}`;
-            
+            if (i18n.getCurrentLanguage() == "en")
+                this.count_down.innerText = `Start in : ${countdown}`;
+            else if (i18n.getCurrentLanguage() == "fr")
+                this.count_down.innerText = `Reprise dans : ${countdown}`;
+            else
+                this.count_down.innerText = `Empieza en : ${countdown}`;
+
             // Utiliser this.countdown_interval
             this.countdown_interval = setInterval(() => {
                 countdown--;
-                
+
                 if (this.state.restart_active)
                 {
                     //console.log("⚠️ Countdown de but interrompu par restart");
                     return;
                 }
-                
+
                 if (countdown > 0)
                 {
-                    this.count_down.innerText = `Reprise dans : ${countdown}`;
-                } else
+                    if (i18n.getCurrentLanguage() == "en")
+                        this.count_down.innerText = `Start in : ${countdown}`;
+                    else if (i18n.getCurrentLanguage() == "fr")
+                        this.count_down.innerText = `Reprise dans : ${countdown}`;
+                    else
+                        this.count_down.innerText = `Empieza en : ${countdown}`;
+                }
+                else
                 {
                     clearInterval(this.countdown_interval!);
                     this.countdown_interval = null;
@@ -1100,7 +1263,7 @@ class Pong
     normalize_ball_speed(): void
     {
         const current_speed = Math.sqrt(this.ball.ball_dir_x * this.ball.ball_dir_x + this.ball.ball_dir_y * this.ball.ball_dir_y);
-        
+
         if (current_speed !== 0)
         {
             this.ball.ball_dir_x = (this.ball.ball_dir_x / current_speed) * this.config.ball_speed;
@@ -1212,7 +1375,7 @@ class Pong
         let dir_y = this.ball.ball_dir_y;
         let prev_x = x;
         let prev_y = y;
-        
+
         while (x < this.config.canvas_width - 40)
         {
             if (y <= 0 || y >= this.config.canvas_height)
@@ -1244,7 +1407,7 @@ class Pong
             let final_distance = Math.sqrt(Math.pow(x - prev_x, 2) + Math.pow(y - prev_y, 2));
             this.ball.distance_ia += final_distance;
         }
-        
+
         this.ball.time_ia_in_frame = this.ball.distance_ia / this.config.ball_speed;
         //this.paddle.time_ia_in_frame = Math.abs(this.ball.ia_y - this.paddle.right_paddle_y + 5) / this.config.paddle_speed;
     }
@@ -1290,7 +1453,7 @@ class Pong
 
     update_paddle_ia_with_time()
     {
-        if (this.ia.depart >= this.ia.counter) 
+        if (this.ia.depart >= this.ia.counter)
             return ;
 
         if (this.ia.move_1 >= this.ia.counter - this.ia.depart)
@@ -1313,7 +1476,7 @@ class Pong
             //this.ia.ia_debug_2 = true;
         }
         if (this.ia.move_2 >= (this.ia.counter - this.ia.move_1 - this.ia.depart))
-        {       
+        {
             if (this.ia.ia_debug == true)
             {
                 let center_paddle = this.ia.delta_error + this.ia.delta_paddle + this.paddle.right_paddle_y + this.config.paddle_height / 2;
@@ -1344,7 +1507,7 @@ class Pong
             {
                 console.log("****** 1 CLOSE move 1 *********");
                 this.ia.ia_debug = false;
-            }            
+            }
             this.ia_ajustement(200, this.ia.random_move_1);
             return ;
         }
@@ -1389,7 +1552,7 @@ class Pong
             {
                 console.log("****** 1 FAR move 1 *********");
                 this.ia.ia_debug = false;
-            }    
+            }
             this.ia_ajustement_rebond(200);
             return ;
         }
@@ -1414,7 +1577,7 @@ class Pong
                 this.ia.ia_debug = false;
                 if (Math.abs(distance) < 30)
                     this.ia.random_move_2 = false;
-            }            
+            }
             if (this.config.ball_speed > 13)
                 this.ia_ajustement(12, false);
             else
@@ -1434,7 +1597,7 @@ class Pong
             {
                 console.log("****** 2 REBONDS move 1 *********");
                 this.ia.ia_debug = false;
-            }           
+            }
             this.ia_ajustement_rebond(200);
             return ;
         }
@@ -1459,7 +1622,7 @@ class Pong
                 this.ia.ia_debug = false;
                 if (Math.abs(distance) < 30)
                     this.ia.random_move_2 = false;
-            }      
+            }
             if (this.config.ball_speed > 13)
                 this.ia_ajustement(12, false);
             else
@@ -1483,7 +1646,7 @@ class Pong
             console.log("FIN DE MOVE avec random = false");
             return ;
         }
-        
+
         if (Math.abs(distance) <= marge && random == true && this.ia.move_flag == true)
         {
             if (this.ia.continue_flag == true)
@@ -1492,7 +1655,7 @@ class Pong
                 this.ia.distance_with_marge = center_paddle - this.ball.ia_y;
                 this.ia.continue_flag = false;
             }
-            this.continue_movement();  
+            this.continue_movement();
             console.log("FIN DE MOVE continue");
             return ;
         }
@@ -1552,7 +1715,7 @@ class Pong
     }
 
     continue_movement()
-    {   
+    {
         let center_paddle = this.paddle.right_paddle_y + this.ia.delta_error + this.ia.delta_paddle + this.config.paddle_height / 2;
         let target_y = this.ball.ia_y;
 
@@ -1580,7 +1743,7 @@ class Pong
     }
 
     continue_movement_rebond()
-    {   
+    {
         let center_paddle = this.paddle.right_paddle_y + this.ia.delta_error + this.ia.delta_paddle + this.config.paddle_height / 2;
         let target_y = this.ball.ia_y;
 
@@ -1641,7 +1804,7 @@ class Pong
                 else
                     this.ia.delta_error = (70 + this.ia.delta_paddle) * -1;
             }
-        }        
+        }
         else if (this.paddle.current_shot < 12)
         {
             if (random < 0.20 + ajust_percent_lose)
@@ -1651,7 +1814,7 @@ class Pong
                 else
                     this.ia.delta_error = (70 + this.ia.delta_paddle) * -1;
             }
-        }        
+        }
         else
         {
             if (random < 0.30 + ajust_percent_lose)
@@ -1681,7 +1844,7 @@ class GamePong
 export class Game_solo
 {
     private current_game: Pong | null = null;
-    private canvas: HTMLCanvasElement; 
+    private canvas: HTMLCanvasElement;
     private mode: 'solo' | 'versus';
 
 
@@ -1712,16 +1875,16 @@ export class Game_solo
         {
             this.current_game.cleanup();
         }
-    }    
-    
+    }
+
     back_to_menu()
     {
         if (this.current_game)
         {
             this.current_game.back_to_menu();
         }
-    }    
-    
+    }
+
     destroy()
     {
         if (this.current_game)
@@ -1730,5 +1893,3 @@ export class Game_solo
         }
     }
 }
-
-

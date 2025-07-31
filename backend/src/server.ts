@@ -1,4 +1,20 @@
-// server.ts - Configuration améliorée pour Docker avec détection IP intelligente
+
+// version fusionne avec diagnostic SSL
+
+import { config } from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const envPath = path.join(__dirname, '../../.devcontainer/.env');
+console.log('🔍 Chemin du fichier .env:', envPath);
+console.log('🔍 Fichier .env existe:', fs.existsSync(envPath));
+
+const result = config({ path: envPath });
+console.log('🔍 Résultat chargement .env:', result.error ? result.error.message : 'Succès');
 
 import { logger } from "./utils/logger.js";
 import { metricsPlugin } from "./utils/metricsPlugin.js";
@@ -9,8 +25,6 @@ import { registerProfileRoute } from "./routes/profile.js";
 import fastifyStatic from "@fastify/static";
 import fastifyWebsocket from "@fastify/websocket";
 import fastifyMultipart from "@fastify/multipart";
-import path from "path";
-import { fileURLToPath } from "url";
 import { PrismaClient } from "@prisma/client";
 import chatWebSocketRoutes from "./routes/chat.js";
 import cookie from "@fastify/cookie";
@@ -18,14 +32,11 @@ import type { FastifyCookieOptions } from "@fastify/cookie";
 import { registerNotificationRoutes } from "./routes/notifications.js";
 import { registerGameRoute } from "./routes/game.js";
 import { GameManager } from "./game/GameManager.js";
-import fs from "fs";
 import os from "os";
-import { execSync } from "child_process"; // Import manquant ajouté !
+import { execSync } from "child_process";
 import { twoFactorRoutes } from "./routes/two-factor.js";
 
 // Configuration des chemins
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 export const PROJECT_ROOT = path.resolve(__dirname, "../../");
 
 // Extension du type FastifyRequest pour les métriques
@@ -44,210 +55,9 @@ const HTTP_REDIRECT_PORT = process.env.HTTP_REDIRECT_PORT
 	: 8080;
 const METRICS_PORT = process.env.METRICS_PORT
 	? parseInt(process.env.METRICS_PORT)
-	: 3001; // Port dédié pour les métriques
-
-/**
- * Détecte si nous sommes dans un environnement containerisé
- * Cette fonction examine plusieurs indicateurs pour déterminer si l'application
- * s'exécute dans un conteneur Docker ou un environnement similaire
- */
-// const isRunningInContainer = (): boolean => {
-// 	try {
-// 		// Vérifier l'existence du fichier .dockerenv (créé par Docker)
-// 		if (fs.existsSync('/.dockerenv')) {
-// 			console.log("🐳 Environnement Docker détecté via .dockerenv");
-// 			return true;
-// 		}
-
-// 		// Vérifier si nous sommes dans un cgroup Docker/containerd
-// 		if (fs.existsSync('/proc/1/cgroup')) {
-// 			const cgroup = fs.readFileSync('/proc/1/cgroup', 'utf8');
-// 			if (cgroup.includes('docker') || cgroup.includes('containerd')) {
-// 				console.log("🐳 Environnement containerisé détecté via cgroup");
-// 				return true;
-// 			}
-// 		}
-
-// 		// Vérifier les variables d'environnement Docker communes
-// 		if (process.env.DOCKER_CONTAINER || process.env.HOSTNAME?.match(/^[a-f0-9]{12}$/)) {
-// 			console.log("🐳 Environnement containerisé détecté via variables d'environnement");
-// 			return true;
-// 		}
-
-// 		return false;
-// 	} catch (error) {
-// 		console.log("⚠️ Impossible de détecter l'environnement containerisé, suppose un environnement natif");
-// 		return false;
-// 	}
-// };
-
-// /**
-//  * Tente de récupérer l'IP de l'hôte Docker depuis l'intérieur d'un conteneur
-//  * Cette fonction utilise plusieurs stratégies pour identifier l'IP de la machine hôte
-//  */
-// const getDockerHostIP = (): string | null => {
-// 	console.log("🔍 Tentative de détection de l'IP de l'hôte Docker...");
-
-// 	// Stratégie 1: Variable d'environnement explicite (recommandée)
-// 	if (process.env.DOCKER_HOST_IP) {
-// 		console.log(`🎯 IP hôte Docker définie explicitement: ${process.env.DOCKER_HOST_IP}`);
-// 		return process.env.DOCKER_HOST_IP;
-// 	}
-
-// 	try {
-// 		// Stratégie 2: Analyser la route par défaut pour trouver la gateway
-// 		// La gateway par défaut dans un conteneur Docker pointe généralement vers l'hôte
-// 		const routeOutput = execSync('ip route show default', { encoding: 'utf8', timeout: 5000 });
-// 		const gatewayMatch = routeOutput.match(/default via ([\d.]+)/);
-
-// 		if (gatewayMatch && gatewayMatch[1]) {
-// 			const gateway = gatewayMatch[1];
-// 			// Éviter les gateways Docker par défaut qui ne sont pas l'hôte réel
-// 			if (gateway !== '172.17.0.1' && gateway !== '172.18.0.1') {
-// 				console.log(`🌉 IP hôte détectée via route par défaut: ${gateway}`);
-// 				return gateway;
-// 			}
-// 		}
-
-// 		// Stratégie 3: Examiner la configuration réseau pour trouver l'hôte
-// 		// Certains setups Docker utilisent des réseaux personnalisés avec des patterns spécifiques
-// 		const interfaceOutput = execSync('ip addr show', { encoding: 'utf8', timeout: 5000 });
-// 		const hostNetworkMatch = interfaceOutput.match(/inet ([\d.]+)\/\d+ brd [\d.]+ scope global/);
-
-// 		if (hostNetworkMatch && hostNetworkMatch[1] && !hostNetworkMatch[1].startsWith('172.')) {
-// 			console.log(`🏠 IP hôte potentielle détectée via interfaces réseau: ${hostNetworkMatch[1]}`);
-// 			return hostNetworkMatch[1];
-// 		}
-
-// 	} catch (error) {
-// 		console.log("⚠️ Impossible d'exécuter les commandes de détection réseau:", (error as Error).message);
-// 	}
-
-// 	console.log("❌ Aucune IP hôte Docker détectée automatiquement");
-// 	return null;
-// };
-
-// /**
-//  * Fonction principale de détection d'IP accessible
-//  * Cette fonction orchestre la détection d'IP en fonction de l'environnement d'exécution
-//  */
-// const getAccessibleIP = (): string => {
-// 	const networkInterfaces = os.networkInterfaces();
-// 	const candidateIPs: Array<{
-// 		ip: string;
-// 		interface: string;
-// 		priority: number;
-// 		source: string; // Ajout d'un champ pour tracer la source de l'IP
-// 	}> = [];
-
-// 	console.log("🔍 Analyse des interfaces réseau disponibles:");
-
-// 	for (const interfaceName in networkInterfaces) {
-// 		const interfaces = networkInterfaces[interfaceName];
-// 		if (interfaces) {
-// 			for (const iface of interfaces) {
-// 				if (!iface.internal && iface.family === "IPv4") {
-// 					let priority = 0;
-// 					let source = "interface réseau";
-
-// 					// Priorisation intelligente basée sur le type d'interface
-// 					if (interfaceName.startsWith("eth") || interfaceName.startsWith("eno")) {
-// 						priority += 100; // Interface Ethernet physique (priorité maximale)
-// 						source = "Ethernet physique";
-// 					} else if (interfaceName.startsWith("ens")) {
-// 						priority += 95; // Interface Ethernet moderne
-// 						source = "Ethernet moderne";
-// 					} else if (interfaceName.startsWith("wl") || interfaceName.includes("wifi")) {
-// 						priority += 80; // Interface WiFi
-// 						source = "WiFi";
-// 					}
-
-// 					// Pénaliser les interfaces virtuelles/Docker
-// 					if (interfaceName.startsWith("docker") || interfaceName.startsWith("br-")) {
-// 						priority -= 50;
-// 						source = "Docker (évité)";
-// 					}
-// 					if (interfaceName.startsWith("veth") || interfaceName.startsWith("virbr")) {
-// 						priority -= 30;
-// 						source = "Interface virtuelle (évitée)";
-// 					}
-
-// 					// Bonus pour les plages d'IP privées standard
-// 					if (iface.address.startsWith("192.168.")) {
-// 						priority += 50;
-// 						source += " (réseau domestique)";
-// 					} else if (iface.address.startsWith("10.")) {
-// 						priority += 45;
-// 						source += " (réseau d'entreprise)";
-// 					} else if (iface.address.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./)) {
-// 						priority += 40;
-// 						source += " (réseau privé)";
-// 					}
-
-// 					candidateIPs.push({
-// 						ip: iface.address,
-// 						interface: interfaceName,
-// 						priority: priority,
-// 						source: source
-// 					});
-
-// 					console.log(`   📡 ${interfaceName}: ${iface.address} (priorité: ${priority}, source: ${source})`);
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	if (candidateIPs.length > 0) {
-// 		// Trier par priorité décroissante et sélectionner la meilleure
-// 		candidateIPs.sort((a, b) => b.priority - a.priority);
-// 		const bestIP = candidateIPs[0];
-// 		console.log(`🎯 IP sélectionnée: ${bestIP.ip} (interface: ${bestIP.interface}, source: ${bestIP.source})`);
-// 		return bestIP.ip;
-// 	}
-
-// 	console.log("⚠️ Aucune IP externe détectée, utilisation de localhost");
-// 	return "localhost";
-// };
-
-// /**
-//  * Fonction intelligente de détermination de l'IP publique
-//  * Cette fonction coordonne toutes les stratégies de détection d'IP selon l'environnement
-//  */
-// const determinePublicIP = (): string => {
-// 	console.log("🌐 === DÉTECTION INTELLIGENTE DE L'IP PUBLIQUE ===");
-
-// 	// Priorité 1: IP définie manuellement dans l'environnement
-// 	if (process.env.PUBLIC_IP && process.env.PUBLIC_IP !== "auto") {
-// 		console.log(`🎯 Utilisation de l'IP définie manuellement: ${process.env.PUBLIC_IP}`);
-// 		return process.env.PUBLIC_IP;
-// 	}
-
-// 	// Priorité 2: Détection automatique selon l'environnement
-// 	const inContainer = isRunningInContainer();
-
-// 	if (inContainer) {
-// 		console.log("🐳 Environnement containerisé détecté - recherche de l'IP hôte...");
-// 		const dockerHostIP = getDockerHostIP();
-
-// 		if (dockerHostIP) {
-// 			console.log(`✅ IP hôte Docker trouvée: ${dockerHostIP}`);
-// 			return dockerHostIP;
-// 		} else {
-// 			console.log("⚠️ IP hôte Docker non trouvée, utilisation de l'IP du conteneur");
-// 			return getAccessibleIP();
-// 		}
-// 	} else {
-// 		console.log("🖥️ Environnement natif détecté - utilisation des interfaces système");
-// 		return getAccessibleIP();
-// 	}
-// };
-
-// // Configuration IP intelligente utilisant la nouvelle fonction
-// const PUBLIC_IP: string = determinePublicIP();
-
+	: 3001;
 
 const PUBLIC_IP = process.env.PUBLIC_IP || "127.0.0.1";
-
 
 const prisma = new PrismaClient();
 
@@ -272,47 +82,87 @@ interface HttpsOptions {
 	cert: Buffer;
 }
 
-// Fonction pour charger les certificats SSL avec gestion d'erreur améliorée
+// Fonction améliorée pour diagnostiquer et charger les certificats SSL
 const loadSSLCertificates = (): HttpsOptions | null => {
+	console.log("🔍 === DIAGNOSTIC SSL ===");
+
 	try {
 		const sslPath = path.join(__dirname, "../ssl");
+		const keyPath = path.join(sslPath, "key.pem");
+		const certPath = path.join(sslPath, "cert.pem");
 
-		if (
-			!fs.existsSync(path.join(sslPath, "key.pem")) ||
-			!fs.existsSync(path.join(sslPath, "cert.pem"))
-		) {
-			console.log(
-				"ℹ️ Certificats SSL non trouvés - le serveur fonctionnera en HTTP"
-			);
+		console.log(`🔍 Chemin SSL: ${sslPath}`);
+		console.log(`🔍 Dossier SSL existe: ${fs.existsSync(sslPath)}`);
+		console.log(`🔍 Fichier key.pem: ${keyPath}`);
+		console.log(`🔍 key.pem existe: ${fs.existsSync(keyPath)}`);
+		console.log(`🔍 Fichier cert.pem: ${certPath}`);
+		console.log(`🔍 cert.pem existe: ${fs.existsSync(certPath)}`);
+
+		// Vérifier si nous sommes dans un conteneur
+		const isInContainer = fs.existsSync('/.dockerenv');
+		console.log(`🔍 Dans un conteneur: ${isInContainer}`);
+
+		if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
+			console.log("⚠️ Certificats SSL manquants - FORCER LE MODE HTTP");
+			console.log("ℹ️ Le serveur démarrera en HTTP uniquement");
 			return null;
 		}
 
+		// Tenter de lire les fichiers et vérifier leur contenu
+		let keyContent: Buffer;
+		let certContent: Buffer;
+
+		try {
+			keyContent = fs.readFileSync(keyPath);
+			console.log(`✅ Clé privée lue: ${keyContent.length} bytes`);
+		} catch (error) {
+			console.error(`❌ Erreur lecture clé privée: ${(error as Error).message}`);
+			return null;
+		}
+
+		try {
+			certContent = fs.readFileSync(certPath);
+			console.log(`✅ Certificat lu: ${certContent.length} bytes`);
+		} catch (error) {
+			console.error(`❌ Erreur lecture certificat: ${(error as Error).message}`);
+			return null;
+		}
+
+		// Vérifier le format des certificats
+		const keyStr = keyContent.toString();
+		const certStr = certContent.toString();
+
+		if (!keyStr.includes('-----BEGIN') || !keyStr.includes('-----END')) {
+			console.error("❌ Format de clé privée invalide");
+			return null;
+		}
+
+		if (!certStr.includes('-----BEGIN CERTIFICATE-----')) {
+			console.error("❌ Format de certificat invalide");
+			return null;
+		}
+
+
 		const httpsOptions: HttpsOptions = {
-			key: fs.readFileSync(path.join(sslPath, "key.pem")),
-			cert: fs.readFileSync(path.join(sslPath, "cert.pem")),
+			key: keyContent,
+			cert: certContent,
 		};
 
-		console.log("✅ Certificats SSL chargés avec succès");
 		return httpsOptions;
 	} catch (error: any) {
-		console.error(
-			"❌ Erreur lors du chargement des certificats SSL:",
-			error.message
-		);
-		console.log("⚠️ Le serveur fonctionnera en HTTP");
+		console.error("❌ Erreur lors du diagnostic SSL:", error.message);
+		console.log("⚠️ Le serveur fonctionnera en HTTP pour éviter les problèmes");
 		return null;
 	}
 };
 
-// Chargement des certificats
-const httpsOptions: HttpsOptions | null = loadSSLCertificates();
+const httpsOptions = loadSSLCertificates();
 
-// Création du serveur principal (application web)
+// Création du serveur principal avec diagnostic amélioré
 const app = fastify({
 	logger: {
 		level: "info",
 	},
-	// HTTPS uniquement pour l'application web principale
 	...(httpsOptions && { https: httpsOptions }),
 	trustProxy: true,
 	disableRequestLogging: false,
@@ -465,7 +315,7 @@ const setupMainServer = async () => {
 		});
 	});
 
-	// Enregistrement des routes API
+	// Enregistrement des routes API dans l'ordre exact de la version de base
 	console.log("🛣️ Enregistrement des routes...");
 	await registerNewUser(app, prisma);
 	await handleLogIn(app, prisma);
@@ -484,6 +334,7 @@ const setupMainServer = async () => {
 		console.error("❌ Error initializing GameManager:", error);
 	}
 
+	// 2FA routes
 	await twoFactorRoutes(app, prisma);
 
 	// Route de santé pour le monitoring
@@ -494,12 +345,12 @@ const setupMainServer = async () => {
 			version: process.env.npm_package_version || "1.0.0",
 			ssl: httpsOptions ? "enabled" : "disabled",
 			metrics_server: `http://${PUBLIC_IP}:${METRICS_PORT}/metrics`,
-			// environment: isRunningInContainer() ? "containerized" : "native",
 			detected_ip: PUBLIC_IP,
+			environment: fs.existsSync('/.dockerenv') ? "containerized" : "native",
 		};
 	});
 
-	// Configuration du gestionnaire 404 pour le SPA
+	// Configuration du gestionnaire 404 pour le SPA - DOIT ÊTRE EN DERNIER
 	app.setNotFoundHandler((_req, reply) => {
 		reply.sendFile("index.html");
 	});
@@ -520,7 +371,7 @@ const setupMetricsServer = async () => {
 			status: "ok",
 			service: "metrics-server",
 			timestamp: new Date().toISOString(),
-			// environment: isRunningInContainer() ? "containerized" : "native",
+			environment: fs.existsSync('/.dockerenv') ? "containerized" : "native",
 		};
 	});
 
@@ -530,9 +381,10 @@ const setupMetricsServer = async () => {
 	});
 };
 
-// Création du serveur de redirection HTTP (si HTTPS est activé)
+// PAS de serveur de redirection HTTP si on force le mode HTTP
 const createHttpRedirectServer = () => {
 	if (!httpsOptions) {
+		console.log("ℹ️ Pas de serveur de redirection - Mode HTTP uniquement");
 		return null;
 	}
 
@@ -545,7 +397,6 @@ const createHttpRedirectServer = () => {
 		const clientHost = request.headers.host?.split(":")[0] || "localhost";
 		let redirectHost = PUBLIC_IP;
 
-		// Si l'accès se fait via localhost, maintenir localhost dans la redirection
 		if (clientHost === "localhost" || clientHost === "127.0.0.1") {
 			redirectHost = "localhost";
 		}
@@ -565,9 +416,13 @@ const createHttpRedirectServer = () => {
 const start = async () => {
 	try {
 		console.log("🚀 Démarrage du serveur Trans-App...");
-		console.log(
-			`🌐 Configuration réseau: IP=${PUBLIC_IP}, Port principal=${MAIN_PORT}, Port métriques=${METRICS_PORT}`
-		);
+		console.log("🔍 === CONFIGURATION RÉSEAU ===");
+		console.log(`🌐 IP: ${PUBLIC_IP}`);
+		console.log(`🚪 Port principal: ${MAIN_PORT}`);
+		console.log(`📊 Port métriques: ${METRICS_PORT}`);
+		console.log(`🔄 Port redirection: ${HTTP_REDIRECT_PORT}`);
+		console.log(`🔒 SSL: ${httpsOptions ? "ACTIVÉ" : "DÉSACTIVÉ"}`);
+		console.log(`🐳 Conteneur: ${fs.existsSync('/.dockerenv') ? "OUI" : "NON"}`);
 
 		// Test de connexion à la base de données
 		console.log("🗄️ Test de connexion à la base de données...");
@@ -587,12 +442,6 @@ const start = async () => {
 			host: "0.0.0.0",
 		});
 		console.log(`✅ Serveur de métriques démarré avec succès`);
-		console.log(
-			`📊 Métriques Prometheus: http://localhost:${METRICS_PORT}/metrics`
-		);
-		console.log(
-			`📊 Métriques (réseau): http://${PUBLIC_IP}:${METRICS_PORT}/metrics`
-		);
 
 		// Démarrage du serveur principal
 		const protocol = httpsOptions ? "HTTPS" : "HTTP";
@@ -604,18 +453,21 @@ const start = async () => {
 			host: "0.0.0.0",
 		});
 
-		console.log(`✅ Serveur ${protocol} principal démarré avec succès`);
-		console.log(
-			`🔗 Accès local: ${protocol.toLowerCase()}://localhost:${MAIN_PORT}`
-		);
+		console.log("\n🎉 === SERVEUR DÉMARRÉ AVEC SUCCÈS ===");
+		console.log(`✅ Serveur ${protocol} principal: OK`);
+		console.log(`🔗 Accès local: ${protocol.toLowerCase()}://localhost:${MAIN_PORT}`);
 
-		if (PUBLIC_IP !== "localhost") {
-			console.log(
-				`🌍 Accès réseau: ${protocol.toLowerCase()}://${PUBLIC_IP}:${MAIN_PORT}`
-			);
+		if (PUBLIC_IP !== "localhost" && PUBLIC_IP !== "127.0.0.1") {
+			console.log(`🌍 Accès réseau: ${protocol.toLowerCase()}://${PUBLIC_IP}:${MAIN_PORT}`);
 		}
 
-		// Si HTTPS est configuré, créer un serveur de redirection HTTP
+		// Métriques
+		console.log(`📊 Métriques: http://localhost:${METRICS_PORT}/metrics`);
+		if (PUBLIC_IP !== "localhost") {
+			console.log(`📊 Métriques (réseau): http://${PUBLIC_IP}:${METRICS_PORT}/metrics`);
+		}
+
+		// Serveur de redirection uniquement si HTTPS est activé
 		if (httpsOptions && HTTP_REDIRECT_PORT !== MAIN_PORT) {
 			const httpRedirectApp = createHttpRedirectServer();
 			if (httpRedirectApp) {
@@ -627,38 +479,26 @@ const start = async () => {
 					host: "0.0.0.0",
 				});
 				console.log(
-					`✅ Serveur de redirection HTTP démarré: port ${HTTP_REDIRECT_PORT} → HTTPS:${MAIN_PORT}`
+					`✅ Serveur de redirection: port ${HTTP_REDIRECT_PORT} → HTTPS:${MAIN_PORT}`
 				);
 			}
 		}
 
-		// Instructions pour la configuration Docker et monitoring
-		console.log("\n📋 Configuration pour votre stack de monitoring:");
-		console.log(
-			"═══════════════════════════════════════════════════════════════"
-		);
-		console.log(
-			`📊 Prometheus - Target: http://dev:${METRICS_PORT}/metrics`
-		);
-		console.log(`📈 Grafana - Interface: http://localhost:9080`);
-		console.log(`🕸️ ELK Stack - Logs disponibles via le logger configuré`);
-		console.log(
-			`🔗 Application: ${protocol.toLowerCase()}://localhost:${MAIN_PORT}`
-		);
-		console.log(
-			"═══════════════════════════════════════════════════════════════"
-		);
-
-		if (PUBLIC_IP !== "localhost") {
-			console.log("\n🌐 Accès depuis d'autres machines du réseau:");
-			console.log(
-				`   Application: ${protocol.toLowerCase()}://${PUBLIC_IP}:${MAIN_PORT}`
-			);
-			console.log(
-				`   Métriques: http://${PUBLIC_IP}:${METRICS_PORT}/metrics`
-			);
+		console.log("\n📋 === ACCÈS RECOMMANDÉS ===");
+		if (httpsOptions) {
+			console.log(`🔒 Application (HTTPS): https://localhost:${MAIN_PORT}`);
+			if (PUBLIC_IP !== "localhost") {
+				console.log(`🔒 Application (réseau): https://${PUBLIC_IP}:${MAIN_PORT}`);
+			}
+		} else {
+			console.log(`🌐 Application (HTTP): http://localhost:${MAIN_PORT}`);
+			if (PUBLIC_IP !== "localhost") {
+				console.log(`🌐 Application (réseau): http://${PUBLIC_IP}:${MAIN_PORT}`);
+			}
 		}
+
 	} catch (err) {
+		console.error("💥 === ERREUR DE DÉMARRAGE ===");
 		if (typeof err === "string") {
 			logger.error(err);
 		} else if (err instanceof Error) {
@@ -675,7 +515,6 @@ const start = async () => {
 const gracefulShutdown = async (signal: string) => {
 	console.log(`🛑 Signal ${signal} reçu, arrêt propre en cours...`);
 	try {
-		// Arrêter le GameManager proprement
 		if (gameManager) {
 			gameManager.shutdown();
 		}
@@ -709,7 +548,20 @@ process.on("uncaughtException", (error) => {
 start();
 
 
-// // server.ts - Configuration améliorée pour Docker avec détection IP intelligente
+// import { config } from 'dotenv';
+// import path from 'path';
+// import { fileURLToPath } from 'url';
+// import fs from 'fs';
+
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+
+// const envPath = path.join(__dirname, '../.env');
+// console.log('🔍 Chemin du fichier .env:', envPath);
+// console.log('🔍 Fichier .env existe:', fs.existsSync(envPath));
+
+// const result = config({ path: envPath });
+// console.log('🔍 Résultat chargement .env:', result.error ? result.error.message : 'Succès');
 
 // import { logger } from "./utils/logger.js";
 // import { metricsPlugin } from "./utils/metricsPlugin.js";
@@ -720,8 +572,6 @@ start();
 // import fastifyStatic from "@fastify/static";
 // import fastifyWebsocket from "@fastify/websocket";
 // import fastifyMultipart from "@fastify/multipart";
-// import path from "path";
-// import { fileURLToPath } from "url";
 // import { PrismaClient } from "@prisma/client";
 // import chatWebSocketRoutes from "./routes/chat.js";
 // import cookie from "@fastify/cookie";
@@ -729,13 +579,12 @@ start();
 // import { registerNotificationRoutes } from "./routes/notifications.js";
 // import { registerGameRoute } from "./routes/game.js";
 // import { GameManager } from "./game/GameManager.js";
-// import fs from "fs";
 // import os from "os";
+// import { execSync } from "child_process"; // Import manquant ajouté !
 // import { twoFactorRoutes } from "./routes/two-factor.js";
+// import googleAuthRoutes from "./routes/google-auth.js";
 
 // // Configuration des chemins
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
 // export const PROJECT_ROOT = path.resolve(__dirname, "../../");
 
 // // Extension du type FastifyRequest pour les métriques
@@ -754,93 +603,9 @@ start();
 // 	: 8080;
 // const METRICS_PORT = process.env.METRICS_PORT
 // 	? parseInt(process.env.METRICS_PORT)
-// 	: 3001; // Port dédié pour les métriques
+// 	: 3001;
 
-// // Fonction améliorée pour détecter l'IP accessible depuis l'extérieur
-// const getAccessibleIP = (): string => {
-// 	const networkInterfaces = os.networkInterfaces();
-// 	const candidateIPs: Array<{
-// 		ip: string;
-// 		interface: string;
-// 		priority: number;
-// 	}> = [];
-
-// 	console.log("🔍 Analyse des interfaces réseau disponibles:");
-
-// 	for (const interfaceName in networkInterfaces) {
-// 		const interfaces = networkInterfaces[interfaceName];
-// 		if (interfaces) {
-// 			for (const iface of interfaces) {
-// 				if (!iface.internal && iface.family === "IPv4") {
-// 					let priority = 0;
-
-// 					// Priorisation basée sur le nom de l'interface et les plages d'IP
-// 					if (
-// 						interfaceName.startsWith("eth") ||
-// 						interfaceName.startsWith("ens")
-// 					) {
-// 						priority += 100; // Interface Ethernet physique
-// 					}
-// 					if (
-// 						interfaceName.startsWith("wl") ||
-// 						interfaceName.includes("wifi")
-// 					) {
-// 						priority += 80; // Interface WiFi
-// 					}
-
-// 					// Éviter les interfaces Docker par défaut
-// 					if (
-// 						interfaceName.startsWith("docker") ||
-// 						interfaceName.startsWith("br-")
-// 					) {
-// 						priority -= 50;
-// 					}
-
-// 					// Privilégier les IP de réseau local standard
-// 					if (
-// 						iface.address.startsWith("192.168.") ||
-// 						iface.address.startsWith("10.") ||
-// 						iface.address.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./)
-// 					) {
-// 						priority += 50;
-// 					}
-
-// 					candidateIPs.push({
-// 						ip: iface.address,
-// 						interface: interfaceName,
-// 						priority: priority,
-// 					});
-// 					console.log(`🌐 Configuration réseau: IP=${PUBLIC_IP}, Port principal=${MAIN_PORT}, Port métriques=${METRICS_PORT}`);
-// 					console.log(
-// 						`   📡 ${interfaceName}: ${iface.address} (priorité: ${priority})`
-// 					);
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	if (candidateIPs.length > 0) {
-// 		// Trier par priorité décroissante et prendre la meilleure
-// 		candidateIPs.sort((a, b) => b.priority - a.priority);
-// 		const bestIP = candidateIPs[0];
-// 		console.log(
-// 			`🎯 IP sélectionnée: ${bestIP.ip} (interface: ${bestIP.interface}, priorité: ${bestIP.priority})`
-// 		);
-// 		return bestIP.ip;
-// 	}
-
-// 	console.log("⚠️ Aucune IP publique détectée, utilisation de localhost");
-// 	return "localhost";
-// };
-
-// // Configuration IP intelligente
-// let PUBLIC_IP: string;
-// if (process.env.PUBLIC_IP && process.env.PUBLIC_IP !== "auto") {
-// 	PUBLIC_IP = process.env.PUBLIC_IP;
-// 	console.log(`🎯 Utilisation de l'IP définie manuellement: ${PUBLIC_IP}`);
-// } else {
-// 	PUBLIC_IP = getAccessibleIP();
-// }
+// const PUBLIC_IP = process.env.PUBLIC_IP || "127.0.0.1";
 
 // const prisma = new PrismaClient();
 
@@ -1065,6 +830,8 @@ start();
 // 	await registerProfileRoute(app, prisma);
 // 	await chatWebSocketRoutes(app, prisma);
 // 	await registerNotificationRoutes(app, prisma);
+// 	await twoFactorRoutes(app, prisma);
+// 	await app.register(googleAuthRoutes, { prefix: '/api' });
 
 // 	// =============== SERVER-SIDE PONG SETUP ===============
 // 	console.log("🎮 Initializing Game Manager for Server-Side Pong...");
@@ -1077,9 +844,6 @@ start();
 // 		console.error("❌ Error initializing GameManager:", error);
 // 	}
 
-
-// 	await twoFactorRoutes(app, prisma); // ← Ajouter cette ligne
-
 // 	// Route de santé pour le monitoring
 // 	app.get("/health", async (request, reply) => {
 // 		return {
@@ -1088,6 +852,8 @@ start();
 // 			version: process.env.npm_package_version || "1.0.0",
 // 			ssl: httpsOptions ? "enabled" : "disabled",
 // 			metrics_server: `http://${PUBLIC_IP}:${METRICS_PORT}/metrics`,
+// 			// environment: isRunningInContainer() ? "containerized" : "native",
+// 			detected_ip: PUBLIC_IP,
 // 		};
 // 	});
 
@@ -1112,6 +878,7 @@ start();
 // 			status: "ok",
 // 			service: "metrics-server",
 // 			timestamp: new Date().toISOString(),
+// 			// environment: isRunningInContainer() ? "containerized" : "native",
 // 		};
 // 	});
 
@@ -1266,7 +1033,7 @@ start();
 // const gracefulShutdown = async (signal: string) => {
 // 	console.log(`🛑 Signal ${signal} reçu, arrêt propre en cours...`);
 // 	try {
-// 		// ✅ AJOUT : arrêter le GameManager proprement
+// 		// Arrêter le GameManager proprement
 // 		if (gameManager) {
 // 			gameManager.shutdown();
 // 		}

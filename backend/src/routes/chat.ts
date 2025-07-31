@@ -3,7 +3,7 @@ import "@fastify/websocket";
 import { PrismaClient } from "@prisma/client";
 
 // Store active connections with user information
-const activeConnections = new Map<
+export const activeConnections = new Map<
 	string,
 	{
 		connection: any;
@@ -153,6 +153,30 @@ export default async function chatWebSocketRoutes(
 							connection,
 							prisma,
 							username
+						);
+						break;
+					case "send_game_invite":
+						await handleSendGameInvite(
+							data,
+							user.id,
+							username,
+							prisma
+						);
+						break;
+					case "accept_game_invite":
+						await handleAcceptGameInvite(
+							data,
+							user.id,
+							username,
+							prisma
+						);
+						break;
+					case "decline_game_invite":
+						await handleDeclineGameInvite(
+							data,
+							user.id,
+							username,
+							prisma
 						);
 						break;
 					default:
@@ -699,6 +723,261 @@ export function sendTournamentNotification(username: string, message: string) {
 		message: message,
 		timestamp: new Date().toISOString(),
 	});
+}
+
+/**
+ * Handle sending game invitation
+ *
+ * @param data - Invitation data
+ * @param senderId - ID of the sender
+ * @param senderUsername - Username of the sender
+ * @param prisma - Prisma client
+ */
+async function handleSendGameInvite(
+	data: any,
+	senderId: number,
+	senderUsername: string,
+	prisma: PrismaClient
+) {
+	const { receiverUsername } = data;
+
+	if (!receiverUsername) {
+		return;
+	}
+
+	try {
+		// Get receiver user
+		const receiver = await prisma.user.findUnique({
+			where: { username: receiverUsername },
+		});
+
+		if (!receiver) {
+			sendToUser(senderUsername, {
+				type: "error",
+				message: "User not found",
+			});
+			return;
+		}
+
+		// Check if sender is blocked by receiver
+		const isBlocked = await prisma.block.findFirst({
+			where: {
+				blockerId: receiver.id,
+				blockedId: senderId,
+			},
+		});
+
+		if (isBlocked) {
+			sendToUser(senderUsername, {
+				type: "error",
+				message: "Cannot send game invitation to this user",
+			});
+			return;
+		}
+
+		// Check if there's already a pending invitation from this sender to this receiver
+		const existingInvite = await prisma.gameInvite.findFirst({
+			where: {
+				inviterId: senderId,
+				inviteeId: receiver.id,
+				status: "pending",
+			},
+		});
+
+		if (existingInvite) {
+			sendToUser(senderUsername, {
+				type: "error",
+				message: "You already have a pending game invitation to this user",
+			});
+			return;
+		}
+
+		// Create game invite in database
+		const gameInvite = await prisma.gameInvite.create({
+			data: {
+				inviterId: senderId,
+				inviteeId: receiver.id,
+				status: "pending",
+			},
+		});
+
+		// Send invitation to receiver if online
+		if (activeConnections.has(receiverUsername)) {
+			sendToUser(receiverUsername, {
+				type: "game_invite_received",
+				inviteId: gameInvite.id,
+				senderUsername: senderUsername,
+				timestamp: new Date().toISOString(),
+			});
+		}
+
+		// Confirm to sender
+		sendToUser(senderUsername, {
+			type: "game_invite_sent",
+			receiverUsername: receiverUsername,
+			inviteId: gameInvite.id,
+		});
+	} catch (error) {
+		console.error("❌ Error sending game invite:", error);
+		sendToUser(senderUsername, {
+			type: "error",
+			message: "Failed to send game invitation",
+		});
+	}
+}
+
+/**
+ * Handle accepting game invitation
+ *
+ * @param data - Accept data
+ * @param userId - ID of the user accepting
+ * @param username - Username of the user accepting
+ * @param prisma - Prisma client
+ */
+async function handleAcceptGameInvite(
+	data: any,
+	userId: number,
+	username: string,
+	prisma: PrismaClient
+) {
+	const { inviteId } = data;
+
+	if (!inviteId) {
+		return;
+	}
+
+	try {
+		// Find the invitation
+		const invite = await prisma.gameInvite.findUnique({
+			where: { id: inviteId },
+			include: {
+				inviter: { select: { username: true } },
+				invitee: { select: { username: true } },
+			},
+		});
+
+		if (!invite || invite.inviteeId !== userId) {
+			sendToUser(username, {
+				type: "error",
+				message: "Invalid game invitation",
+			});
+			return;
+		}
+
+		if (invite.status !== "pending") {
+			sendToUser(username, {
+				type: "error",
+				message: "Game invitation already processed",
+			});
+			return;
+		}
+
+		// Update invitation status
+		await prisma.gameInvite.update({
+			where: { id: inviteId },
+			data: { status: "accepted" },
+		});
+
+		// Notify sender
+		if (activeConnections.has(invite.inviter.username)) {
+			sendToUser(invite.inviter.username, {
+				type: "game_invite_accepted",
+				receiverUsername: username,
+				inviteId: inviteId,
+				message: "Game invitation accepted! Note: Multiplayer functionality is not yet implemented.",
+			});
+		}
+
+		// Confirm to receiver
+		sendToUser(username, {
+			type: "game_invite_response",
+			status: "accepted",
+			senderUsername: invite.inviter.username,
+			message: "Game invitation accepted! Note: Multiplayer functionality is not yet implemented.",
+		});
+	} catch (error) {
+		console.error("❌ Error accepting game invite:", error);
+		sendToUser(username, {
+			type: "error",
+			message: "Failed to accept game invitation",
+		});
+	}
+}
+
+/**
+ * Handle declining game invitation
+ *
+ * @param data - Decline data
+ * @param userId - ID of the user declining
+ * @param username - Username of the user declining
+ * @param prisma - Prisma client
+ */
+async function handleDeclineGameInvite(
+	data: any,
+	userId: number,
+	username: string,
+	prisma: PrismaClient
+) {
+	const { inviteId } = data;
+
+	if (!inviteId) {
+		return;
+	}
+
+	try {
+		// Find the invitation
+		const invite = await prisma.gameInvite.findUnique({
+			where: { id: inviteId },
+			include: {
+				inviter: { select: { username: true } },
+				invitee: { select: { username: true } },
+			},
+		});
+
+		if (!invite || invite.inviteeId !== userId) {
+			sendToUser(username, {
+				type: "error",
+				message: "Invalid game invitation",
+			});
+			return;
+		}
+
+		if (invite.status !== "pending") {
+			sendToUser(username, {
+				type: "error",
+				message: "Game invitation already processed",
+			});
+			return;
+		}
+
+		// Update invitation status
+		await prisma.gameInvite.update({
+			where: { id: inviteId },
+			data: { status: "declined" },
+		});
+
+		// Notify sender
+		if (activeConnections.has(invite.inviter.username)) {
+			sendToUser(invite.inviter.username, {
+				type: "game_invite_declined",
+				receiverUsername: username,
+				inviteId: inviteId,
+			});
+		}
+
+		// Confirm to receiver
+		sendToUser(username, {
+			type: "game_invite_response",
+			status: "declined",
+			senderUsername: invite.inviter.username,
+		});
+	} catch (error) {
+		console.error("❌ Error declining game invite:", error);
+		sendToUser(username, {
+			type: "error",
+			message: "Failed to decline game invitation",
+		});
+	}
 }
 
 /**

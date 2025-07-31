@@ -13,6 +13,8 @@ dist-ssr
 *.local
 generated/
 .devcontainer/.env
+backend/.env
+.env
 
 # Editor directories and files
 .vscode/*
@@ -24,5 +26,3 @@ generated/
 *.njsproj
 *.sln
 *.sw?
-
-.devcontainer/.env

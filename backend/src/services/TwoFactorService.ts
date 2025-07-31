@@ -18,7 +18,7 @@ export function verifyEmailCode(user: any, code: string) {
 }
 
 export function generateTOTPSecret(username: string) {
-	const secret = speakeasy.generateSecret({ name: `YourApp (${username})` }); //YOU APP NAME
+	const secret = speakeasy.generateSecret({ name: `Transcendance (${username})` }); 
 	return {
 		base32: secret.base32!,
 		otpauth_url: secret.otpauth_url!,

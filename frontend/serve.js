@@ -9,31 +9,33 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+const PORT = 5174;
 
 // Serve static files from dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // API proxy
 app.use('/api', createProxyMiddleware({
-  target: 'https://localhost:3000',
+  target: 'https://localhost:3002',
   changeOrigin: true,
-  secure: false,
+  secure: true,
+  rejectUnauthorized: false
 }));
 
 // WebSocket proxy
 app.use('/ws', createProxyMiddleware({
-  target: 'wss://localhost:3000',
+  target: 'wss://localhost:3002',
   ws: true,
   changeOrigin: true,
-  secure: false,
+  secure: true,
+  rejectUnauthorized: false
 }));
 
 // Metrics proxy
 app.use('/metrics', createProxyMiddleware({
-  target: 'https://localhost:3001',
+  target: 'http://localhost:3001',
   changeOrigin: true,
-  secure: false,
+  secure: false
 }));
 
 // Catch-all handler for SPA routing

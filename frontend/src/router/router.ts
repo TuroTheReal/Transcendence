@@ -99,6 +99,39 @@ class Router {
     private async renderRoute(route: string): Promise<void> {
         console.log("🎯 renderRoute called with route:", route);
         
+        // Check if route requires authentication
+        if (this.isProtectedRoute(route)) {
+            console.log("🔐 Protected route detected, checking authentication...");
+            const authToken = sessionStorage.getItem('authToken');
+            if (!authToken) {
+                console.log("❌ No auth token found, redirecting to login");
+                this.navigate('/login');
+                return;
+            }
+            
+            // Verify token by calling /api/me
+            try {
+                const response = await fetch('/api/me', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    console.log("❌ Auth verification failed, redirecting to login");
+                    sessionStorage.removeItem('authToken');
+                    this.navigate('/login');
+                    return;
+                }
+                console.log("✅ Authentication verified");
+            } catch (error) {
+                console.log("❌ Auth check error, redirecting to login");
+                sessionStorage.removeItem('authToken');
+                this.navigate('/login');
+                return;
+            }
+        }
+        
         // Check exact routes first
         let routeHandler = this.routes.get(route);
         let routeParams: any = {};

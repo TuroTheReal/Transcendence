@@ -1,44 +1,10 @@
 #!/bin/bash
 
-# IP de votre machine sur le réseau local.
-# Changez cette valeur si votre IP change.
-PUBLIC_IP="10.16.13.4"
-DOMAIN_NAME="localhost"
+# Se placer dans le dossier du script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-echo "🔐 Génération des certificats SSL"
-echo "=================================================="
-echo "IP configurée: $PUBLIC_IP"
-echo "Domaine/CN: $DOMAIN_NAME"
-echo ""
-
-# Créer le dossier ssl s'il n'existe pas
 mkdir -p ssl
-
-# Créer un fichier de configuration OpenSSL pour inclure les SAN (Subject Alternative Names)
-# et le bon Key Usage, ce qui est crucial pour que les navigateurs modernes acceptent le certificat.
-cat > ssl/openssl.conf << EOF
-[req]
-distinguished_name = req_distinguished_name
-x509_extensions = v3_req
-prompt = no
-
-[req_distinguished_name]
-C=FR
-ST=Ile de France
-L=Paris
-O=Development
-OU=Dev
-CN=$DOMAIN_NAME
-
-[v3_req]
-keyUsage = critical, digitalSignature, keyEncipherment
-extendedKeyUsage = serverAuth
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = localhost
-IP.1 = $PUBLIC_IP
-EOF
 
 echo "📝 Configuration OpenSSL (ssl/openssl.conf) créée."
 echo ""

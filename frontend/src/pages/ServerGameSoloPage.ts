@@ -25,11 +25,11 @@ export class ServerGameSoloPage implements Page {
             <style>
                 /* Styles rétro gaming noir et violet - identiques au jeu normal */
                 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-                
+
                 * {
                     font-family: 'Orbitron', monospace;
                 }
-                
+
                 .neon-text {
                     color: #bb86fc;
                     text-shadow:
@@ -38,10 +38,10 @@ export class ServerGameSoloPage implements Page {
                         0 0 9px #bb86fc;
                     animation: neonFlicker 2s infinite alternate;
                 }
-                
+
                 @keyframes neonFlicker {
                     0%, 100% {
-                        text-shadow: 
+                        text-shadow:
                             0 0 5px #9d4edd,
                             0 0 10px #9d4edd,
                             0 0 15px #9d4edd,
@@ -49,7 +49,7 @@ export class ServerGameSoloPage implements Page {
                             0 0 35px #9d4edd;
                     }
                     50% {
-                        text-shadow: 
+                        text-shadow:
                             0 0 2px #9d4edd,
                             0 0 5px #9d4edd,
                             0 0 8px #9d4edd,
@@ -57,18 +57,18 @@ export class ServerGameSoloPage implements Page {
                             0 0 25px #9d4edd;
                     }
                 }
-                
+
                 .retro-button {
                     background: linear-gradient(135deg, #1a0d1a 0%, #0a0a0a 50%, #1a0d1a 100%);
                     border: 2px solid #9d4edd;
-                    box-shadow: 
+                    box-shadow:
                         0 0 10px #9d4edd40,
                         inset 0 0 10px #9d4edd20;
                     transition: all 0.3s ease;
                     position: relative;
                     overflow: hidden;
                 }
-                
+
                 .retro-button::before {
                     content: '';
                     position: absolute;
@@ -79,19 +79,19 @@ export class ServerGameSoloPage implements Page {
                     background: linear-gradient(90deg, transparent, #9d4edd40, transparent);
                     transition: left 0.5s;
                 }
-                
+
                 .retro-button:hover {
                     border-color: #c77dff;
-                    box-shadow: 
+                    box-shadow:
                         0 0 20px #9d4edd,
                         inset 0 0 20px #9d4edd30;
                     transform: scale(1.05);
                 }
-                
+
                 .retro-button:hover::before {
                     left: 100%;
                 }
-                
+
                 .starfield {
                     position: fixed;
                     top: 0;
@@ -110,21 +110,21 @@ export class ServerGameSoloPage implements Page {
                     background-size: 250px 150px;
                     animation: twinkle 4s ease-in-out infinite alternate;
                 }
-                
+
                 @keyframes twinkle {
                     0% { opacity: 0.5; }
                     100% { opacity: 1; }
                 }
-                
+
                 .retro-panel {
                     background: #050505;
                     border: 2px solid #9d4edd;
-                    box-shadow: 
+                    box-shadow:
                         0 0 15px #9d4edd40,
                         inset 0 0 15px #9d4edd20;
                     backdrop-filter: blur(5px);
                 }
-                
+
                 .scan-lines::before {
                     content: '';
                     position: absolute;
@@ -141,28 +141,28 @@ export class ServerGameSoloPage implements Page {
                     animation: scan 0.1s linear infinite;
                     pointer-events: none;
                 }
-                
+
                 @keyframes scan {
                     0% { background-position: 0 0; }
                     100% { background-position: 0 4px; }
                 }
-                
+
                 .scoreboard-panel {
                     background: linear-gradient(135deg, #0a0a0a 0%, #1a0d1a 50%, #0a0a0a 100%);
                     border: 2px solid #9d4edd;
-                    box-shadow: 
+                    box-shadow:
                         0 0 20px #9d4edd60,
                         inset 0 0 20px #9d4edd30;
                 }
-                
+
                 .game-canvas-frame {
                     background: #050505;
                     border: 3px solid #9d4edd;
-                    box-shadow: 
+                    box-shadow:
                         0 0 30px #9d4edd80,
                         inset 0 0 30px #9d4edd40;
                 }
-                
+
                 .corner-indicator {
                     width: 20px;
                     height: 20px;
@@ -170,25 +170,25 @@ export class ServerGameSoloPage implements Page {
                     box-shadow: 0 0 10px #9d4edd;
                 }
             </style>
-            
+
             <!-- Champ d'étoiles -->
             <div class="starfield"></div>
-            
+
             <div class="min-h-screen bg-gray-900 text-white font-mono overflow-hidden scan-lines relative">
                 <div class="min-h-screen flex flex-col items-center justify-center p-4">
-                    
+
                     <!-- Bouton retour -->
                     <div class="absolute top-4 left-4">
                         <button class="retro-button text-white font-bold py-2 px-6 rounded-lg transition-all duration-300" data-route="/server-game">
                             ← RETOUR
                         </button>
                     </div>
-                    
+
                     <!-- Titre du mode -->
                     <h1 class="text-4xl font-bold neon-text mb-8 text-center">
                         🤖 SERVER-SIDE SOLO (VS IA)
                     </h1>
-                    
+
                     <!-- Zone de jeu principale -->
                     <div class="retro-panel rounded-lg p-6 shadow-2xl w-full max-w-4xl">
                         <!-- Scores -->
@@ -214,11 +214,11 @@ export class ServerGameSoloPage implements Page {
                                 <div class="corner-indicator absolute top-0 right-0"></div>
                                 <div class="corner-indicator absolute bottom-0 left-0"></div>
                                 <div class="corner-indicator absolute bottom-0 right-0"></div>
-                                
-                                <canvas 
-                                    id="gameCanvas" 
-                                    width="800" 
-                                    height="600" 
+
+                                <canvas
+                                    id="gameCanvas"
+                                    width="800"
+                                    height="600"
                                     class="rounded-lg bg-black"
                                 ></canvas>
                             </div>

@@ -1,20 +1,42 @@
+
 import { i18n } from "../services/i18n.js";
 import { createLanguageSwitcher } from "../components/LanguageSwitcher.js";
-import { createNeonContainer } from "../styles/neonTheme.js";
+import { classes } from "../styles/retroStyles.js";
 
 export function createSignUpPage(): HTMLElement {
 	const page = document.createElement("div");
-	page.className = "fade-in";
+	page.className = "min-h-screen bg-gray-900 text-white font-mono overflow-hidden";
 
 	const renderContent = () => {
-		const content = `
-			<div class="neon-card max-w-md w-full p-8 slide-up">
-				<div class="flex justify-between items-center mb-6">
-					<button class="neon-btn neon-btn-secondary text-sm" data-route="/login">
-						← ${i18n.t('signup.back_to_login')}
-					</button>
-				</div>
-				<h1 class="neon-title text-center mb-8">📝 ${i18n.t('signup.title')}</h1>
+		page.innerHTML = `
+		<style>
+			/* Import de la police Orbitron pour le thème rétro */
+			@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+			
+			* {
+				font-family: 'Orbitron', monospace;
+			}
+		</style>
+		
+		<!-- Champ d'étoiles -->
+		<div class="${classes.starfield}"></div>
+		<div class="absolute top-4 left-4 z-50">
+			<div class="login-dropdown">
+				<button class="${classes.backButton}" data-route="/login">
+					← ${i18n.t('signup.back_to_login')}
+				</button>
+			</div>
+		</div>
+		<!-- Conteneur principal avec effet scan -->
+		<div class="min-h-screen flex flex-col items-center justify-center p-4 ${classes.scanLinesContainer}">
+			
+			<!-- Titre principal avec effet néon -->
+			<h1 class="${classes.retroTitle} mb-12">
+				📝 ${i18n.t('signup.title')}
+			</h1>
+			
+			<!-- Panneau de création de compte -->
+			<div class="${classes.retroPanel} rounded-2xl p-8 max-w-md w-full">	
 				<form class="space-y-6">
 					<div>
 						<input 
@@ -22,7 +44,7 @@ export function createSignUpPage(): HTMLElement {
 							placeholder="${i18n.t('signup.username')}" 
 							id="username" 
 							required 
-							class="neon-input"
+							class="${classes.tournamentInput}"
 						>
 					</div>
 					<div>
@@ -40,11 +62,11 @@ export function createSignUpPage(): HTMLElement {
 							placeholder="${i18n.t('signup.password')}" 
 							id="password" 
 							required 
-							class="neon-input"
+							class="${classes.tournamentInput}"
 						>
 					</div>
 					<div>
-						<label for="avatar" class="block text-sm font-medium neon-text-muted mb-2">
+						<label for="avatar" class="block text-sm font-medium ${classes.neonText} mb-2">
 							${i18n.t('signup.avatar_label')}
 						</label>
 						<input 
@@ -52,26 +74,28 @@ export function createSignUpPage(): HTMLElement {
 							id="avatar" 
 							name="avatar" 
 							accept="image/png, image/jpeg" 
-							class="neon-input"
+							class="${classes.tournamentInput} text-sm"
 						/>
 					</div>
 					<div class="flex justify-center">
 						<img 
 							id="avatar-preview" 
 							width="200" 
-							class="border-2 border-green-400 rounded-lg shadow-lg neon-border" 
+							class="border-4 ${classes.neonBorder} rounded-lg shadow-lg" 
 							style="display: none;" 
 						/>
 					</div>
-					<button type="submit" class="neon-btn neon-btn-primary w-full">
-						✨ ${i18n.t('signup.create_account')}
+					<button type="submit" class="${classes.actionButton} w-full text-xl py-4">
+						<span class="relative z-10">✨ ${i18n.t('signup.create_account')}</span>
 					</button>
 				</form>
 			</div>
-			<div class="absolute top-4 right-4" id="language-switcher-container"></div>
+		</div>
+		
+		<div class="absolute top-4 right-4" id="language-switcher-container"></div>
 		`;
 		
-		page.innerHTML = createNeonContainer(content);
+		//page.innerHTML = createNeonContainer(content);
 		
 		// Add language switcher
 		const languageSwitcherContainer = page.querySelector('#language-switcher-container');

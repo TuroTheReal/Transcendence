@@ -14,7 +14,8 @@ model User {
   id					Int			@id @default(autoincrement())
   username				String		@unique
   email					String		@unique
-  passwordHash			String
+  passwordHash			String?
+  googleId				String?		@unique
   avatarUrl				String?
   isTwoFactorEnabled	Boolean		@default(false)
   twoFactorCode      String?
@@ -45,15 +46,19 @@ model Match {
   players				Int			@default(0)
   player1				User		@relation("Player1", fields: [player1Id], references: [id])
   player1Id				Int
-  player2				User	@relation("Player2", fields: [player2Id], references: [id])
-  player2Id				Int
+  player2				User?	@relation("Player2", fields: [player2Id], references: [id])
+  player2Id				Int?
   score1				Int
   score2				Int
-  winnerId				Int      // FK vers User.id (le gagnant)
+  winnerId				Int?      // FK vers User.id (le gagnant)
   playedAt				DateTime	@default(now())
   lasted				Int			@default(0)
   pointsUp				Int			@default(0)
   pointsDown			Int			@default(0)
+  tournamentMode		Boolean		@default(false)
+  iaMode		Boolean		@default(false)
+  multiMode		Boolean		@default(false)
+  versusMode		Boolean		@default(false)
 }
 
 model Message {

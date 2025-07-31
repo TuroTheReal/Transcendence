@@ -362,10 +362,10 @@ export async function twoFactorRoutes(
 			if (!user)
 				return reply.status(404).send({ error: "User not found" });
 
-			const isValidPassword = await bcrypt.compare(
+			const isValidPassword = user.passwordHash ? await bcrypt.compare(
 				password,
 				user.passwordHash
-			);
+			) : false;
 			if (!isValidPassword)
 				return reply.status(400).send({ error: "Invalid password" });
 
@@ -402,10 +402,10 @@ export async function twoFactorRoutes(
 			if (!user)
 				return reply.status(400).send({ error: "Invalid credentials" });
 
-			const isValidPassword = await bcrypt.compare(
+			const isValidPassword = user.passwordHash ? await bcrypt.compare(
 				password,
 				user.passwordHash
-			);
+			) : false;
 			if (!isValidPassword)
 				return reply.status(400).send({ error: "Invalid credentials" });
 

@@ -8,6 +8,7 @@ import { PROJECT_ROOT } from "../server.js";
 import { createHash } from "crypto";
 import jwt from "jsonwebtoken";
 import { request } from "http";
+import { sessionManager } from "../services/sessionManager.js"
 
 /*
 TO DO:
@@ -135,6 +136,33 @@ export async function registerProfileRoute(
 		}
 	);
 
+	app.get('/api/profile/user/:username/online', {
+		handler: async (request, reply) => {
+		try {
+
+			const auth = extractTokenFromRequest(request);
+			if (!auth) {
+				return reply.status(401).send({ error: "Unauthorized" });
+			}
+
+			const { username } = request.params as { username: string };
+			const isOnline = sessionManager.isUserOnline(username);
+
+			reply.send({
+				success: true,
+				username: username,
+				isOnline: isOnline
+			});
+		} catch (error) {
+			console.error('Error checking user online status:', error);
+			reply.status(500).send({
+			success: false,
+			error: 'Failed to check online status'
+			});
+		}
+		}
+	});
+
 	app.get(
 		"/api/profile",
 		async (
@@ -152,6 +180,7 @@ export async function registerProfileRoute(
 				return;
 			}
 			const { code, data } = await getUserInfo(username, prisma);
+
 			reply.status(code).send(data);
 		}
 	);
@@ -381,7 +410,6 @@ export async function registerProfileRoute(
 		if (user.id === friend.id)
 			return reply.status(400).send({ error: "Cannot add yourself" });
 
-		// Vérifie si déjà ami
 		const alreadyFriend = await prisma.user.findFirst({
 			where: {
 				id: user.id,

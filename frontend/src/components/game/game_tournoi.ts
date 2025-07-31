@@ -1,3 +1,4 @@
+import { i18n } from "../../services/i18n.js";
 
 // -------------------------- INTERFACES ------------------------------------
 
@@ -268,32 +269,48 @@ class Pong
         this.keys_pressed[e.key] = false;
     };
 
-    start(): void
-    {
-        this.draw(1);
-        //console.log("ca demarre");
-        let countdown = 3;
-        this.count_down.innerText = `Debut de partie dans`;
-        setTimeout(() => 
-        {
-            this.state.count_down_active = true;
+    start(): void {
+        // Vérifier et récupérer l'élément countdown au moment où on en a besoin
+        this.ensureCountdownElement();
+        
+        if (!this.count_down) {
+            //console.error("Impossible de démarrer : élément countdown introuvable");
+            return;
+        }
 
-            if (!this.count_down)
-            {
-                //console.error("Element countdown non trouve");
+        this.draw(1);
+        let countdown = 3;
+
+        if (i18n.getCurrentLanguage() == "en")
+            this.count_down.innerText = `The game will start in`;
+        else if (i18n.getCurrentLanguage() == "fr")     
+            this.count_down.innerText = `Debut de partie dans`;
+        else
+            this.count_down.innerText = `El partido empieza en`;
+            
+        setTimeout(() => {
+            // Vérifier à nouveau avant d'utiliser l'élément
+            if (!this.count_down) {
+                //console.error("Élément countdown perdu pendant le setTimeout");
                 return;
             }
-
+            
+            this.state.count_down_active = true;
             this.count_down.innerText = `${countdown}`;
 
-            let count_down_interval = setInterval(() =>
-            {
+            let count_down_interval = setInterval(() => {
                 countdown--;
+                
+                // Vérification à chaque itération
+                if (!this.count_down) {
+                    //console.error("Élément countdown perdu pendant le countdown");
+                    clearInterval(count_down_interval);
+                    return;
+                }
 
-                if (countdown > 0)
+                if (countdown > 0) {
                     this.count_down.innerText = `${countdown}`;
-                else
-                {
+                } else {
                     clearInterval(count_down_interval);
                     this.count_down.innerText = "";
                     this.state.count_down_active = false;
@@ -304,6 +321,55 @@ class Pong
             }, 1000);
         }, 1000);
     }
+
+    // Nouvelle méthode pour s'assurer que l'élément existe
+    private ensureCountdownElement(): void {
+        if (!this.count_down) {
+            //console.log("Récupération de l'élément countdown...");
+            this.count_down = document.getElementById("countdowndisplay") as HTMLDivElement;
+        }
+    }
+
+
+    // start(): void
+    // {
+    //     this.draw(1);
+    //     //console.log("ca demarre");
+    //     let countdown = 3;
+    //     if (i18n.getCurrentLanguage() == "en")
+    //         this.count_down.innerText = `The game will start in`;
+    //     else        
+    //         this.count_down.innerText = `Debut de partie dans`;
+    //     setTimeout(() => 
+    //     {
+    //         this.state.count_down_active = true;
+
+    //         if (!this.count_down)
+    //         {
+    //             //console.error("Element countdown non trouve");
+    //             return;
+    //         }
+
+    //         this.count_down.innerText = `${countdown}`;
+
+    //         let count_down_interval = setInterval(() =>
+    //         {
+    //             countdown--;
+
+    //             if (countdown > 0)
+    //                 this.count_down.innerText = `${countdown}`;
+    //             else
+    //             {
+    //                 clearInterval(count_down_interval);
+    //                 this.count_down.innerText = "";
+    //                 this.state.count_down_active = false;
+    //                 this.start_time = performance.now();
+    //                 this.last_frame_time = performance.now();
+    //                 this.game_loop();
+    //             }
+    //         }, 1000);
+    //     }, 1000);
+    // }
 
 
     game_loop(): void
@@ -360,17 +426,45 @@ class Pong
             if (this.state.left_score == this.config.score_to_win)
             {
                 if (this.final == 0)
-                    message = `🏆 ${this.player_a} gagne la partie !`;
+                {
+                    if (i18n.getCurrentLanguage() == "en")
+                        message = `${this.player_a} win the game !`;
+                    else if (i18n.getCurrentLanguage() == "fr")
+                        message = `${this.player_a} gagne la partie !`;
+                    else
+                        message = `${this.player_a} gana el partido !`;
+                }
                 else
-                    message = `🏆 ${this.player_a} gagne le tournoi !`;
+                {
+                    if (i18n.getCurrentLanguage() == "en")
+                        message = `🏆 ${this.player_a} win the tournament !`;
+                    else if (i18n.getCurrentLanguage() == "fr")
+                        message = `🏆 ${this.player_a} gagne le tournoi !`;
+                    else
+                        message = `🏆 ${this.player_a} gana el torneo !`;
+                }
                 this.vainqueur = 1;
             }
             else
             {
                 if (this.final == 0)
-                    message = `🏆 ${this.player_b} gagne la partie !`;
+                {
+                    if (i18n.getCurrentLanguage() == "en")
+                        message = `${this.player_b} win the game !`;
+                    else if (i18n.getCurrentLanguage() == "fr")
+                        message = `${this.player_b} gagne la partie !`;
+                    else
+                        message = `${this.player_b} gana el partido !`;
+                }
                 else
-                    message = `🏆 ${this.player_b} gagne le tournoi !`;
+                {
+                    if (i18n.getCurrentLanguage() == "en")
+                        message = `🏆 ${this.player_b} win the tournament !`;
+                    else if (i18n.getCurrentLanguage() == "fr")
+                        message = `🏆 ${this.player_b} gagne le tournoi !`;
+                    else
+                        message = `🏆 ${this.player_b} gana el torneo !`;
+                }
                 this.vainqueur = 2;
             }
 
@@ -945,7 +1039,12 @@ class Pong
             }
             
             this.state.count_down_active = true;
-            this.count_down.innerText = `Reprise dans : ${countdown}`;
+            if (i18n.getCurrentLanguage() == "en")
+                this.count_down.innerText = `Start in : ${countdown}`;
+            else if (i18n.getCurrentLanguage() == "fr")
+                this.count_down.innerText = `Reprise dans : ${countdown}`;
+            else
+                this.count_down.innerText = `Empieza en : ${countdown}`;
             
             // Utiliser this.countdown_interval
             this.countdown_interval = setInterval(() => {
@@ -959,8 +1058,14 @@ class Pong
                 
                 if (countdown > 0)
                 {
-                    this.count_down.innerText = `Reprise dans : ${countdown}`;
-                } else
+                    if (i18n.getCurrentLanguage() == "en")
+                        this.count_down.innerText = `Start in : ${countdown}`;
+                    else if (i18n.getCurrentLanguage() == "fr")
+                        this.count_down.innerText = `Reprise dans : ${countdown}`;
+                    else
+                        this.count_down.innerText = `Empieza en : ${countdown}`;
+                }
+                else
                 {
                     clearInterval(this.countdown_interval!);
                     this.countdown_interval = null;
