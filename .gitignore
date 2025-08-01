@@ -13,7 +13,7 @@ dist-ssr
 *.local
 generated/
 .devcontainer/.env
-backend/.env
+backend/ssl
 *.env
 *.nfs*
 
