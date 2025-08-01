@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration du service à tester
-TARGET_SERVICE="${TARGET_SERVICE:-http://localhost:3002}"
+TARGET_SERVICE="${TARGET_SERVICE:-http://localhost:3001}"
 PROMETHEUS_URL="${PROMETHEUS_URL:-http://prometheus:9090}"
 
 # Couleurs pour l'affichage
@@ -142,42 +142,126 @@ trigger_service_down() {
         return
     fi
 
+    # Méthode 1: Si l'application tourne via Docker Compose
+    if command -v docker-compose > /dev/null 2>&1; then
+        log_info "Tentative d'arrêt via Docker Compose..."
+
+        # Chercher le conteneur de l'application Transcendence
+        local app_container=$(docker ps --format "table {{.Names}}" | grep -i transcendence | head -1)
+
+        if [ -n "$app_container" ]; then
+            log_warning "Arrêt temporaire du conteneur: $app_container"
+            docker stop "$app_container"
+
+            log_success "Service arrêté via Docker"
+            log_warning "Attendez 1-2 minutes pour que l'alerte se déclenche"
+
+            echo ""
+            log_info "Le service sera automatiquement redémarré dans 90 secondes..."
+            sleep 90
+
+            log_info "Redémarrage du service..."
+            docker start "$app_container"
+
+            # Vérifier que le service répond à nouveau
+            sleep 10
+            if curl -sf "$TARGET_SERVICE/metrics" > /dev/null; then
+                log_success "Service redémarré avec succès"
+            else
+                log_error "Le service ne répond pas après redémarrage"
+                log_info "Vérifiez manuellement avec: docker logs $app_container"
+            fi
+            return
+        fi
+    fi
+
+    # Méthode 2: Recherche de processus plus flexible
     log_info "Recherche du processus du service Transcendence..."
 
-    # Trouver le PID du processus Node.js
-    local node_pid=$(pgrep -f "node.*transcendence\|npm.*start\|node.*app.js\|node.*server.js" | head -1)
+    # Recherche élargie de processus potentiels
+    local possible_pids=(
+        $(pgrep -f "transcendence")
+        $(pgrep -f "node.*3001\|node.*3002")
+        $(pgrep -f "npm.*start")
+        $(pgrep -f "app.js\|server.js\|index.js")
+    )
 
-    if [ -z "$node_pid" ]; then
-        log_error "Impossible de trouver le processus du service"
-        log_info "Le service semble déjà arrêté ou utilise un nom différent"
-        return
+    # Afficher les processus trouvés pour diagnostic
+    if [ ${#possible_pids[@]} -gt 0 ]; then
+        log_info "Processus potentiels trouvés:"
+        for pid in "${possible_pids[@]}"; do
+            if [ -n "$pid" ]; then
+                local cmd=$(ps -p "$pid" -o cmd --no-headers 2>/dev/null)
+                echo "  PID $pid: $cmd"
+            fi
+        done
+
+        # Prendre le premier PID valide
+        local node_pid="${possible_pids[0]}"
+
+        if [ -n "$node_pid" ]; then
+            log_warning "Service trouvé (PID: $node_pid), arrêt en cours..."
+
+            # Arrêter le service temporairement
+            kill -STOP "$node_pid"
+
+            log_success "Service mis en pause"
+            log_warning "Attendez 1-2 minutes pour que l'alerte se déclenche"
+
+            echo ""
+            log_info "Le service sera automatiquement redémarré dans 90 secondes..."
+            sleep 90
+
+            log_info "Redémarrage du service..."
+            kill -CONT "$node_pid"
+
+            # Vérifier que le service répond à nouveau
+            sleep 5
+            if curl -sf "$TARGET_SERVICE/metrics" > /dev/null; then
+                log_success "Service redémarré avec succès"
+            else
+                log_error "Le service ne répond pas après redémarrage"
+                log_info "Vous devrez peut-être le redémarrer manuellement"
+            fi
+            return
+        fi
     fi
 
-    log_warning "Service trouvé (PID: $node_pid), arrêt en cours..."
+    # Méthode 3: Simulation via iptables (si disponible)
+    if command -v iptables > /dev/null 2>&1; then
+        log_warning "Aucun processus trouvé. Tentative de blocage réseau temporaire..."
+        log_info "Cette méthode bloque l'accès au port 3001 pendant 90 secondes"
 
-    # Arrêter le service temporairement
-    kill -STOP "$node_pid"
+        # Extraire le port de TARGET_SERVICE
+        local port=$(echo "$TARGET_SERVICE" | grep -o ':[0-9]*' | tr -d ':')
 
-    log_success "Service mis en pause"
-    log_warning "Attendez 1-2 minutes pour que l'alerte se déclenche"
+        if [ -n "$port" ]; then
+            # Bloquer le port temporairement
+            sudo iptables -A INPUT -p tcp --dport "$port" -j DROP
 
+            log_success "Port $port bloqué temporairement"
+            log_warning "Attendez 1-2 minutes pour que l'alerte se déclenche"
+
+            sleep 90
+
+            log_info "Rétablissement de la connectivité..."
+            sudo iptables -D INPUT -p tcp --dport "$port" -j DROP
+
+            log_success "Connectivité rétablie"
+            return
+        fi
+    fi
+
+    # Si aucune méthode n'a fonctionné
+    log_error "Impossible de trouver ou d'arrêter le service automatiquement"
+    log_info "Options manuelles:"
+    echo "  1. Arrêtez manuellement votre application Transcendence"
+    echo "  2. Attendez 1-2 minutes pour voir l'alerte se déclencher"
+    echo "  3. Redémarrez votre application"
     echo ""
-    log_info "Le service sera automatiquement redémarré dans 90 secondes..."
-
-    # Attendre 90 secondes puis redémarrer
-    sleep 90
-
-    log_info "Redémarrage du service..."
-    kill -CONT "$node_pid"
-
-    # Vérifier que le service répond à nouveau
-    sleep 5
-    if curl -sf "$TARGET_SERVICE/metrics" > /dev/null; then
-        log_success "Service redémarré avec succès"
-    else
-        log_error "Le service ne répond pas après redémarrage"
-        log_info "Vous devrez peut-être le redémarrer manuellement"
-    fi
+    log_info "Pour diagnostiquer, vérifiez les processus actifs:"
+    echo "  ps aux | grep -i transcendence"
+    echo "  docker ps"
 }
 
 # Fonction pour vérifier l'état des alertes via Prometheus
@@ -307,7 +391,7 @@ show_help() {
     echo "  help         - Afficher cette aide"
     echo ""
     echo "🔧 Variables d'environnement:"
-    echo "  TARGET_SERVICE    - URL du service (défaut: http://localhost:3000)"
+    echo "  TARGET_SERVICE    - URL du service (défaut: http://localhost:3001)"
     echo "  PROMETHEUS_URL    - URL de Prometheus (défaut: http://prometheus:9090)"
     echo ""
     echo "💡 Exemples d'utilisation:"

@@ -1,0 +1,25 @@
+{{ define "email.subject" }}🚨 {{ .GroupLabels.severity | toUpper }} - {{ .GroupLabels.alertname }} ({{ .GroupLabels.service }}){{ end }}
+
+{{ define "email.body" }}
+Alerte détectée sur l'application {{ .GroupLabels.service | title }} !
+
+📊 Résumé du problème :
+{{ range .Alerts }}
+- {{ .Annotations.summary }}
+- Description : {{ .Annotations.description }}
+- Déclenchée le : {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+{{ end }}
+
+🏷️ Détails techniques :
+- Nom de l'alerte : {{ .GroupLabels.alertname }}
+- Service concerné : {{ .GroupLabels.service }}
+- Niveau de sévérité : {{ .GroupLabels.severity }}
+- Nombre d'alertes groupées : {{ len .Alerts }}
+
+🔗 Actions recommandées :
+- Consultez le dashboard Prometheus : http://localhost:9090/alerts
+- Vérifiez les métriques de l'application : http://localhost:3001/metrics
+- Surveillez les logs de l'application pour identifier la cause
+
+Cette alerte sera répétée toutes les heures tant qu'elle n'est pas résolue.
+{{ end }}

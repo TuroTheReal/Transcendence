@@ -10,6 +10,7 @@ import {
 import { extractTokenFromRequest } from "./profile.js";
 // Import the Prometheus metrics
 import { connectedUsers, loginRequests } from "../utils/metrics.js";
+import { logger } from "../utils/logger.js";
 
 const secretKey = process.env.COOKIE_SECRET;
 
@@ -138,7 +139,8 @@ export async function handleLogIn(
 
 				console.log("before JWT");
 				// JWT generation - Only update if user wasn't already connected
-				const wasAlreadyConnected = user.connected;
+
+				const wasAlreadyConnected = sessionManager.isUserOnline(user.username);
 
 				await prisma.user.update({
 					where: { id: user.id },
@@ -170,8 +172,8 @@ export async function handleLogIn(
 
 				// PROMETHEUS METRICS: Increment connected users count only if user wasn't already connected
 				if (!wasAlreadyConnected) {
-					connectedUsers.inc();
-					console.log("📊 METRICS: Incremented connected users count");
+					connectedUsers.set(sessionManager.getOnlineUsers().length);
+					logger.info("📊 METRICS: Incremented connected users count");
 				}
 
 				// Record successful login attempt
@@ -268,6 +270,8 @@ export async function handleLogIn(
 					select: { connected: true }
 				});
 
+				const wasOnline = sessionManager.isUserOnline(decoded.username);
+
 				sessionManager.removeSession(decoded.username);
 
 				await prisma.user.update({
@@ -276,9 +280,9 @@ export async function handleLogIn(
 				});
 
 				// PROMETHEUS METRICS: Decrement connected users count only if user was actually connected
-				if (user?.connected) {
-					connectedUsers.dec();
-					console.log("📊 METRICS: Decremented connected users count");
+				if (wasOnline) {
+					connectedUsers.set(sessionManager.getOnlineUsers().length);
+					logger.info("📊 METRICS: Decremented connected users count");
 				}
 
 				reply.send({ success: true });

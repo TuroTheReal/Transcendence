@@ -1,7 +1,7 @@
 # version fusionne
 services:
 
-
+# connected user a verifier, pb parfois
 # Test alerte prometheus, email ?
 # push .pem ? .env ?
 # logger a check apres avoir enlever les consoles logs
@@ -18,7 +18,6 @@ services:
       - ..:/app
       - /app/node_modules
     ports:
-      # - "5173:5173"
       - "${MAIN_PORT}:3002"
       - "${METRICS_PORT}:3001"
       - "${HTTP_REDIRECT_PORT}:8080"
@@ -282,6 +281,30 @@ services:
 
 
 
+  alertmanager:
+    user: "0:0"
+    container_name: trans-alertmanager
+    image: prom/alertmanager:latest
+    ports:
+      - "${ALERT_PORT}:9093"
+    volumes:
+      - ./../monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./../monitoring/alertmanager/templates/email.tmpl:/etc/alertmanager/email.tmpl
+      - alertmanager_data:/alertmanager
+    environment:
+      - ALERT_PORT=${ALERT_PORT}
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:${ALERT_PORT}'
+      - '--cluster.listen-address='
+    depends_on:
+      - prometheus
+    networks:
+      - app-network
+    restart: unless-stopped
+
+
 volumes:
   elasticsearch_data:
   kibana_data:
@@ -289,7 +312,7 @@ volumes:
   shared_data:
   log_cleanup_data:
   grafana_data:
-
+  alertmanager_data:
 
 
 networks:

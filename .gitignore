@@ -14,7 +14,8 @@ dist-ssr
 generated/
 .devcontainer/.env
 backend/.env
-.env
+*.env
+*.nfs*
 
 # Editor directories and files
 .vscode/*
