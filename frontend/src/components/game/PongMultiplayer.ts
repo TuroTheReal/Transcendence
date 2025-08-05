@@ -129,10 +129,10 @@ class Pong
     private keys_pressed: Record<string, boolean> = {};
     private count_down: HTMLDivElement;
     private animation_id: number;
-    private countdown_interval: number | null = null;
-    private restart_timeout: number | null = null;
-    private goal_timeout: number | null = null;
-    private start_timeout: number | null = null;
+    private countdown_interval: ReturnType<typeof setTimeout> | null = null;
+    private restart_timeout: ReturnType<typeof setTimeout> | null = null;
+    private goal_timeout: ReturnType<typeof setTimeout> | null = null;
+    private start_timeout: ReturnType<typeof setTimeout> | null = null;
     private restart_btn: HTMLButtonElement;
     private end_message: HTMLElement | null = null;
     private accumulator: number = 0;
@@ -356,28 +356,24 @@ class Pong
         {
             clearInterval(this.countdown_interval);
             this.countdown_interval = null;
-            //console.log("✅ Countdown interval nettoyé");
         }
         
         if (this.restart_timeout)
         {
             clearTimeout(this.restart_timeout);
             this.restart_timeout = null;
-            //console.log("✅ Restart timeout nettoyé");
         }
         
         if (this.goal_timeout)
         {
             clearTimeout(this.goal_timeout);
             this.goal_timeout = null;
-            //console.log("✅ Goal timeout nettoyé");
         }
         
         if (this.start_timeout)
         {
             clearTimeout(this.start_timeout);
             this.start_timeout = null;
-            //console.log("✅ Start timeout nettoyé");
         }
         
         // Annule aussi l'animation frame si nécessaire
@@ -385,7 +381,6 @@ class Pong
         {
             cancelAnimationFrame(this.animation_id);
             this.animation_id = 0;
-            //console.log("✅ Animation frame annulée");
         }
     }
 
@@ -398,10 +393,8 @@ class Pong
         this.countdown_interval = setInterval(() => {
             countdown--;
             
-            // Vérifier si le restart est toujours valide
             if (this.state.restart_active)
             {
-                //console.log("⚠️ Restart annulé pendant le countdown");
                 return;
             }
             
@@ -412,7 +405,6 @@ class Pong
             }
             else
             {
-                //console.log("🎮 Fin du countdown, reprise du jeu");
                 
                 clearInterval(this.countdown_interval!);
                 this.countdown_interval = null;
@@ -532,7 +524,6 @@ class Pong
         return null;
     }
 
-    // Votre méthode update_ball() modifiée pour le 2v2 avec la détection continue
     update_ball(): void {
         if (this.state.is_paused || this.state.count_down_active) return;
 
@@ -621,7 +612,7 @@ class Pong
                     rect: {
                         x: this.config.canvas_width - 40,
                         y: this.paddle.paddles.p3_y - this.paddle.marge,
-                        width: 15, // De canvas_width-40 à canvas_width-25
+                        width: 15,
                         height: this.config.paddle_height + (this.paddle.marge * 2)
                     }
                 },
@@ -656,7 +647,7 @@ class Pong
                     // Appliquer la logique de rebond spécifique au paddle touché
                     this.update_ball_dir(paddle.id);
                     this.normalize_ball_speed();
-                    return; // Sortir immédiatement pour éviter d'autres collisions cette frame
+                    return; 
                 }
             }
         }
@@ -669,12 +660,11 @@ class Pong
         // Vérifier les buts (logique inchangée)
         if (this.ball.ball_x < 0 || this.ball.ball_x > this.config.canvas_width) {
             this.state.is_paused = true;
-            console.log(`🎯 BUT ! ball_x = ${this.ball.ball_x} et ballspeed = ${this.config.ball_speed}`);
+            // console.log(`🎯 BUT ! ball_x = ${this.ball.ball_x} et ballspeed = ${this.config.ball_speed}`);
             this.handle_goal();
             return;
         }
 
-        // Rebonds sur les murs haut et bas (logique inchangée)
         // Cette partie gère les collisions avec les bordures horizontales
         if (this.ball.ball_y <= 5 || this.ball.ball_y >= this.config.canvas_height - 5) {
             // Ajustement de position pour éviter que la balle reste coincée dans les murs

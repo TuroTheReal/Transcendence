@@ -35,7 +35,6 @@ export async function registerGameRoute(
 ) {
 	// =============== SERVER-SIDE PONG API ROUTES ===============
 
-	// Créer une nouvelle partie
 	app.post("/api/game/create", async (request, reply) => {
 		try {
 			const { mode } = request.body as { mode?: 'solo' | 'versus' };
@@ -52,7 +51,6 @@ export async function registerGameRoute(
 		}
 	});
 
-	// Obtenir l'état d'une partie spécifique
 	app.get("/api/game/:gameId/state", async (request, reply) => {
 		try {
 			const { gameId } = request.params as { gameId: string };
@@ -73,7 +71,6 @@ export async function registerGameRoute(
 		}
 	});
 
-	// Obtenir seulement la position de la balle
 	app.get("/api/game/:gameId/ball", async (request, reply) => {
 		try {
 			const { gameId } = request.params as { gameId: string };
@@ -100,7 +97,6 @@ export async function registerGameRoute(
 		}
 	});
 
-	// Obtenir seulement les positions des paddles
 	app.get("/api/game/:gameId/paddles", async (request, reply) => {
 		try {
 			const { gameId } = request.params as { gameId: string };
@@ -165,7 +161,7 @@ export async function registerGameRoute(
 			});
 		} catch (error) {
 			console.error('Error listing games:', error);
-			reply.status(500).send({ error: 'Failed to list games' });
+			reply.status(400).send({ error: 'Failed to list games' });
 		}
 	});
 
@@ -178,27 +174,27 @@ export async function registerGameRoute(
 				return reply.status(401).send({ error: 'Unauthorized' });
 			}
 
-			console.log("AUTH GAME : ", auth);
+			//console.log("AUTH GAME : ", auth);
 			const gameData = request.body as GameDataRequest;
 			if (!gameData) {
 				reply.status(400).send({ error: "Game data not available" });
 				return;
 			}
 
-			console.log("GAME DATA : ", gameData);
-			console.log("PLAYER ID1 CHECK OK");
+			//console.log("GAME DATA : ", gameData);
+			//console.log("PLAYER ID1 CHECK OK");
 			if (!gameData.player1Id) {
 				return reply.status(400).send({ error: "Player1 ID is required" });
 			}
 
-			console.log("PLAYER ID1 CHECK OK");
+			//console.log("PLAYER ID1 CHECK OK");
 			const user1 = await findUser(prisma, gameData.player1Id);
 			if (!user1) {
 				return reply.status(400).send({
 					error: `Player 1 (ID: ${gameData.player1Id}) doesn't exist`
 				});
 			}
-			console.log("USER1 FOUND IN PRISMA");
+			//console.log("USER1 FOUND IN PRISMA");
 
 			let user2 = null;
 			if (gameData.player2Id) {
@@ -210,10 +206,6 @@ export async function registerGameRoute(
 				}
 			}
 
-			console.log("USER1 : ", user1);
-			//console.log("USER2 : ", user2);
-			console.log("PRISMA CREATE MATCH");
-			// Création du match avec les corrections ci-dessus
 			const game = await prisma.match.create({
 				data: {
 					players: gameData.players,
@@ -238,7 +230,7 @@ export async function registerGameRoute(
 				}
 			});
 
-			console.log("GAME CREATED:", game);
+			//console.log("GAME CREATED:", game);
 			await prisma.user.update({
 					where: { id: gameData.player1Id },
 					data: {
@@ -288,15 +280,14 @@ export async function registerGameRoute(
 		const username = request.query.username as string;
 		const statResults = await generateStats(prisma, username)
         if (statResults === null) {
-            console.log(`❌ stat Results not found for user: ${username}`);
             return reply.status(404).send({ error: 'stat Results not found for user' });
         }
 		const {iaStats, tournamentStats, multiStats} = statResults;
 		if (!iaStats || !tournamentStats || !multiStats)
 			return reply.status(400).send({ error: "No game stats" });
-		console.log("iaStats: ", iaStats);
-		console.log("tournamentStats: ", tournamentStats);
-		console.log("multiStats: ", multiStats);
+		// console.log("iaStats: ", iaStats);
+		// console.log("tournamentStats: ", tournamentStats);
+		// console.log("multiStats: ", multiStats);
 		return reply.status(200).send({success:true, iaStats, tournamentStats, multiStats});
 	});
 }

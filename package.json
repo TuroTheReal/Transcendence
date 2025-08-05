@@ -20,6 +20,7 @@
     "pino-pretty": "^13.0.0",
     "postcss": "^8.5.6",
     "prettier": "3.5.3",
+    "prisma": "^6.13.0",
     "tailwindcss": "^4.1.11",
     "typescript": "~5.8.3"
   },
@@ -29,7 +30,7 @@
     "@fastify/multipart": "^9.0.3",
     "@fastify/static": "^8.2.0",
     "@fastify/websocket": "^11.2.0",
-    "@prisma/client": "^6.10.0",
+    "@prisma/client": "^6.13.0",
     "@tailwindcss/postcss": "^4.1.11",
     "@types/qrcode": "^1.5.5",
     "@types/speakeasy": "^2.0.10",
@@ -52,7 +53,6 @@
     "picomatch": "^4.0.2",
     "pino": "^9.7.0",
     "pino-http": "^10.5.0",
-    "prisma": "^6.10.0",
     "prom-client": "^15.1.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -63,12 +63,14 @@
   },
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "npx prisma generate --schema=./backend/prisma/schema.prisma && cd backend && tsc && node --trace-deprecation dist/server.js",
+    "dev:backend": "npm run build:backend && cd backend && npm install && node --trace-deprecation dist/server.js",
     "dev:frontend": "cd frontend && npm install && npm run build && npm run dev",
-    "build": "npm run build:frontend && npm run build:backend",
-    "build:backend": "npx prisma generate --schema=./backend/prisma/schema.prisma && cd backend && tsc",
+    "build": "npm install && npm run build:backend && npm run build:frontend",
+    "build:backend": "npx prisma generate --schema=./backend/prisma/schema.prisma && cd backend && npm install && npx tsc --build",
     "build:frontend": "cd frontend && npm install && npm run build",
-    "start": "npx prisma generate --schema=./backend/prisma/schema.prisma && cd backend && node dist/server.js"
+    "start": "npm run build:backend && cd backend && node dist/server.js",
+    "prod": "npm run start",
+    "clean": "rm -rf backend/dist && rm -rf frontend/dist"
   },
   "keywords": [],
   "author": "",

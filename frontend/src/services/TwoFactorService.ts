@@ -1,16 +1,4 @@
-/**
- * Frontend service for Two-Factor Authentication operations
- *
- * Provides methods to interact with the backend 2FA API endpoints
- * for both TOTP (authenticator app) and email-based 2FA.
- */
 
-/**
- * Get the current 2FA status for a user
- *
- * @param userId - The ID of the user
- * @returns Promise containing the 2FA status
- */
 export async function get2FAStatus(
 	userId: number
 ): Promise<{ enabled: boolean; type?: "email" | "totp" }> {
@@ -34,18 +22,7 @@ export async function get2FAStatus(
 	}
 }
 
-/**
- * Setup TOTP (Time-based One-Time Password) for authenticator apps
- *
- * @param userId - The ID of the user
- * @returns Promise containing the QR code URL and secret
- *
- * @example
- * ```ts
- * const { otpauth_url, secret } = await setupTOTP(123);
- * // Show QR code to user using otpauth_url
- * ```
- */
+
 export async function setupTOTP(
 	userId: number
 ): Promise<{ otpauth_url: string; secret: string }> {
@@ -70,13 +47,7 @@ export async function setupTOTP(
 	}
 }
 
-/**
- * Verify TOTP code and enable TOTP 2FA
- *
- * @param userId - The ID of the user
- * @param code - The 6-digit TOTP code from authenticator app
- * @returns Promise containing the result
- */
+
 export async function verifyTOTP(
 	userId: number,
 	code: string
@@ -103,12 +74,7 @@ export async function verifyTOTP(
 	}
 }
 
-/**
- * Send 2FA code via email
- *
- * @param userId - The ID of the user
- * @returns Promise containing the result
- */
+
 export async function send2FACode(
 	userId: number
 ): Promise<{ message: string }> {
@@ -134,13 +100,6 @@ export async function send2FACode(
 	}
 }
 
-/**
- * Verify email 2FA code and enable email 2FA
- *
- * @param userId - The ID of the user
- * @param code - The 6-digit code received via email
- * @returns Promise containing the result
- */
 export async function verifyEmail2FA(
 	userId: number,
 	code: string
@@ -167,13 +126,7 @@ export async function verifyEmail2FA(
 	}
 }
 
-/**
- * Disable 2FA for a user
- *
- * @param userId - The ID of the user
- * @param password - The user's current password for verification
- * @returns Promise containing the result or error
- */
+
 export async function disable2FA(
 	userId: number,
 	password: string
@@ -201,13 +154,7 @@ export async function disable2FA(
 	}
 }
 
-/**
- * Verify 2FA code during login process
- *
- * @param username - The username attempting to login
- * @param code - The 2FA code (email or TOTP)
- * @returns Promise containing the authentication result
- */
+
 export async function verify2FALogin(
 	username: string,
 	code: string

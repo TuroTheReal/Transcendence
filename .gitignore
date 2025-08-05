@@ -13,9 +13,13 @@ dist-ssr
 *.local
 generated/
 .devcontainer/.env
-backend/ssl
+backend/.env
+backend/dist
+frontend/dist
 *.env
 *.nfs*
+backend/ssl
+.devcontainer/start.sh
 
 # Editor directories and files
 .vscode/*

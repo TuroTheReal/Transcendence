@@ -59,12 +59,8 @@ export async function registerProfileRoute(
 		) => {
 			try {
 				const filename = request.params.filename;
-				console.log(
-					"🔍 Server-level avatar route called for:",
-					filename
-				);
 
-				if (!/\.(jpg|jpeg|png|gif|webp)$/i.test(filename)) {
+				if (!/\.(jpg|jpeg|png|webp)$/i.test(filename)) {
 					return reply
 						.status(400)
 						.send({ error: "Invalid file type" });
@@ -78,30 +74,23 @@ export async function registerProfileRoute(
 					safeFilename
 				);
 
-				console.log("🔍 Serving avatar from server level:", filePath);
-
 				if (!fs.existsSync(filePath)) {
-					console.log("❌ Avatar file not found:", filePath);
 					return reply
 						.status(404)
 						.send({ error: "Avatar not found" });
 				}
 
 				const stats = fs.statSync(filePath);
-				console.log("📁 File size:", stats.size, "bytes");
 
-				// Check if client wants base64 (for CSP bypass)
 				const acceptsBase64 =
 					request.headers.accept?.includes("application/json");
 
 				if (acceptsBase64) {
-					// Return as base64 JSON for CSP bypass
 					const fileBuffer = fs.readFileSync(filePath);
 					const base64 = fileBuffer.toString("base64");
 					const ext = path.extname(filename).toLowerCase();
 					let mimeType = "image/jpeg";
 					if (ext === ".png") mimeType = "image/png";
-					else if (ext === ".gif") mimeType = "image/gif";
 					else if (ext === ".webp") mimeType = "image/webp";
 
 					return reply.send({
@@ -111,11 +100,9 @@ export async function registerProfileRoute(
 					});
 				}
 
-				// Normal image serving
 				const ext = path.extname(filename).toLowerCase();
 				let mimeType = "image/jpeg";
 				if (ext === ".png") mimeType = "image/png";
-				else if (ext === ".gif") mimeType = "image/gif";
 				else if (ext === ".webp") mimeType = "image/webp";
 
 				reply.header("Content-Type", mimeType);
@@ -128,7 +115,6 @@ export async function registerProfileRoute(
 				const fileStream = fs.createReadStream(filePath);
 				return reply.send(fileStream);
 			} catch (error) {
-				console.error("❌ Error serving avatar:", error);
 				return reply
 					.status(500)
 					.send({ error: "Internal server error" });
@@ -154,8 +140,7 @@ export async function registerProfileRoute(
 				isOnline: isOnline
 			});
 		} catch (error) {
-			console.error('Error checking user online status:', error);
-			reply.status(500).send({
+			reply.status(400).send({
 			success: false,
 			error: 'Failed to check online status'
 			});
@@ -207,27 +192,27 @@ export async function registerProfileRoute(
 	// HANDLE AVATAR REQUEST
 	app.post("/api/profile/avatar", async (request: FastifyRequest, reply) => {
 		const auth = extractTokenFromRequest(request);
-		console.log("auth: ", auth);
+		//console.log("auth: ", auth);
 		if (!auth) {
 			return reply.status(401).send({ error: "Unauthorized" });
 		}
 
 		const file = await request.file();
-		console.log("file: ", file);
+		//console.log("file: ", file);
 		if (!file) {
 			reply.status(400).send({ error: "Avatar file is required" });
 			return;
 		}
 
 		const username = auth.username;
-		console.log("username: ", username);
+		//console.log("username: ", username);
 		if (!username) {
 			reply.status(400).send({ error: "Username is required" });
 			return;
 		}
-		console.log("ABOUT TO UPDATE AVATAR");
+		//console.log("ABOUT TO UPDATE AVATAR");
 		const avatarPath = await updateAvatar(prisma, username, file);
-		console.log("avatarPath: ", avatarPath);
+		//console.log("avatarPath: ", avatarPath);
 		reply.status(200).send({ success: true, avatarPath });
 	});
 
@@ -250,7 +235,6 @@ export async function registerProfileRoute(
 				newUsername: string;
 			};
 
-			// Use the username from the JWT token for security
 			const currentUsername = auth.username;
 			if (!currentUsername || !newUsername) {
 				reply.status(400).send({ error: "Username is required" });
@@ -258,7 +242,6 @@ export async function registerProfileRoute(
 			}
 			try {
 				await updateUsername(prisma, currentUsername, newUsername);
-				// Générer un nouveau JWT avec le nouveau username
 				const updatedUser = await prisma.user.findUnique({
 					where: { username: newUsername },
 				});
@@ -301,7 +284,6 @@ export async function registerProfileRoute(
 				newPassword: string;
 			};
 
-			// Use the username from the JWT token for security
 			const currentUsername = auth.username;
 			if (!currentUsername || !newPassword) {
 				reply
@@ -345,7 +327,6 @@ export async function registerProfileRoute(
 						player2: { select: { username: true } },
 					},
 				});
-				console.log("Matches : ", matches);
 				reply.status(200).send(matches);
 			}
 		}
@@ -380,10 +361,10 @@ export async function registerProfileRoute(
 					},
 				});
 				if (!user) reply.status(404).send({ error: "User not found" });
-				console.log("Friends: ", user?.friends);
+				//console.log("Friends: ", user?.friends);
 				reply.status(200).send(user?.friends);
 			} catch (error) {
-				console.error("Error fetching friends:", error);
+				//console.error("Error fetching friends:", error);
 				reply.status(500).send({ error: "Internal server error" });
 			}
 		}
@@ -474,27 +455,6 @@ async function updatePassword(
 	});
 }
 
-// async function updateAvatar(prisma: PrismaClient, username: string, file: any): Promise<string> {
-// 	const uploadPath = path.join(PROJECT_ROOT, "./public/avatars", `${username}.png`);
-// 	console.log("uploadPath: ", uploadPath);
-// 	await pipeline(file, fs.createWriteStream(uploadPath));
-// 	if (fs.existsSync(uploadPath)) {
-// 		console.log("✅ Fichier sauvegardé avec succès");
-// 		const stats = fs.statSync(uploadPath);
-// 		console.log("📁 Taille du fichier:", stats.size, "bytes");
-// 	} else {
-// 		console.log("❌ Fichier non trouvé après sauvegarde");
-// 	}
-// 	const avatarPath = `/avatars/${username}.png`;
-// 	console.log("avatarPath: ", avatarPath);
-
-// 	await prisma.user.update({
-// 		where: { username },
-// 		data: { avatarUrl: avatarPath }
-// 	});
-// 	return avatarPath;
-// }
-
 async function updateAvatar(
 	prisma: PrismaClient,
 	username: string,
@@ -514,18 +474,15 @@ async function updateAvatar(
 		"./public/avatars/",
 		`${fileName}`
 	);
-	console.log("uploadPath: ", uploadPath);
+	//console.log("uploadPath: ", uploadPath);
 	if (!file.file) {
 		throw new Error("No file stream found");
 	}
 	await pipeline(file.file, fs.createWriteStream(uploadPath));
 	if (fs.existsSync(uploadPath)) {
-		console.log("✅ Fichier sauvegardé avec succès");
 		const stats = fs.statSync(uploadPath);
-		console.log("📁 Taille du fichier:", stats.size, "bytes");
 	}
 	const avatarPath = `/avatars/${fileName}`;
-	console.log("avatarPath: ", avatarPath);
 
 	await prisma.user.update({
 		where: { username },

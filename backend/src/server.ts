@@ -10,12 +10,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const envPath = path.join(__dirname, '../../.devcontainer/.env');
-console.log('🔍 Chemin du fichier .env:', envPath);
-console.log('🔍 Fichier .env existe:', fs.existsSync(envPath));
 
 const result = config({ path: envPath });
-console.log('🔍 Résultat chargement .env:', result.error ? result.error.message : 'Succès');
-
 import { logger } from "./utils/logger.js";
 import { metricsPlugin } from "./utils/metricsPlugin.js";
 import fastify from "fastify";
@@ -35,6 +31,7 @@ import { GameManager } from "./game/GameManager.js";
 import os from "os";
 import { execSync } from "child_process";
 import { twoFactorRoutes } from "./routes/two-factor.js";
+import googleAuthRoutes from "./routes/google-auth.js";
 
 // Configuration des chemins
 export const PROJECT_ROOT = path.resolve(__dirname, "../../");
@@ -91,16 +88,12 @@ const loadSSLCertificates = (): HttpsOptions | null => {
 		const keyPath = path.join(sslPath, "key.pem");
 		const certPath = path.join(sslPath, "cert.pem");
 
-		console.log(`🔍 Chemin SSL: ${sslPath}`);
-		console.log(`🔍 Dossier SSL existe: ${fs.existsSync(sslPath)}`);
-		console.log(`🔍 Fichier key.pem: ${keyPath}`);
-		console.log(`🔍 key.pem existe: ${fs.existsSync(keyPath)}`);
-		console.log(`🔍 Fichier cert.pem: ${certPath}`);
-		console.log(`🔍 cert.pem existe: ${fs.existsSync(certPath)}`);
-
-		// Vérifier si nous sommes dans un conteneur
-		const isInContainer = fs.existsSync('/.dockerenv');
-		console.log(`🔍 Dans un conteneur: ${isInContainer}`);
+		// console.log(`🔍 Chemin SSL: ${sslPath}`);
+		// console.log(`🔍 Dossier SSL existe: ${fs.existsSync(sslPath)}`);
+		// console.log(`🔍 Fichier key.pem: ${keyPath}`);
+		// console.log(`🔍 key.pem existe: ${fs.existsSync(keyPath)}`);
+		// console.log(`🔍 Fichier cert.pem: ${certPath}`);
+		// console.log(`🔍 cert.pem existe: ${fs.existsSync(certPath)}`);
 
 		if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
 			console.log("⚠️ Certificats SSL manquants - FORCER LE MODE HTTP");
@@ -308,9 +301,15 @@ const setupMainServer = async () => {
 
 	// Configuration des fichiers statiques - frontend en second
 	console.log("📁 Enregistrement des fichiers statiques du frontend...");
+	const frontendPath = path.join(__dirname, "../../frontend/dist");
+	console.log("📂 Chemin du frontend:", frontendPath);
+	console.log("📂 Le dossier existe?", fs.existsSync(frontendPath));
+	if (fs.existsSync(frontendPath)) {
+		console.log("📂 Contenu du dossier:", fs.readdirSync(frontendPath));
+	}
 	await app.register(async function (fastify) {
 		await fastify.register(fastifyStatic, {
-			root: path.join(__dirname, "../../frontend/dist"),
+			root: frontendPath,
 			prefix: "/",
 		});
 	});
@@ -336,6 +335,9 @@ const setupMainServer = async () => {
 
 	// 2FA routes
 	await twoFactorRoutes(app, prisma);
+
+	// Google Auth routes
+	await app.register(googleAuthRoutes, { prefix: '/api' });
 
 	// Route de santé pour le monitoring
 	app.get("/health", async (request, reply) => {

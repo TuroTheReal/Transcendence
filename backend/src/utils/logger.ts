@@ -1,5 +1,5 @@
 import pino from 'pino';
-import net from 'net';
+import * as net from 'net';
 
 const sendToLogstash = async (logData: any): Promise<void> => {
 	try {

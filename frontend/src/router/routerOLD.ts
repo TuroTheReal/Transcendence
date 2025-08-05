@@ -123,12 +123,6 @@ class Router {
         }
     }
 
-    private matchesPattern(route: string, pattern: string): boolean {
-        // Convert pattern like "/profile/:username" to regex
-        const regexPattern = pattern.replace(/:[^/]+/g, '[^/]+');
-        const regex = new RegExp(`^${regexPattern}$`);
-        return regex.test(route);
-    }
 
     private extractParams(route: string, pattern: string): any | null {
         // Extract parameters from route using pattern

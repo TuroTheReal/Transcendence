@@ -23,22 +23,17 @@ export async function handleLogIn(
 	app.post(
 		"/api/login",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			console.log("in /api/login");
 			const { username, password, twoFactorToken } = request.body as {
 				username: string;
 				password: string;
 				twoFactorToken?: string;
 			};
 
-			console.log(username);
-			console.log(password);
 			try {
-				console.log("before prisma");
 				const user = await prisma.user.findUnique({
 					where: { username },
 				});
 				if (!user) {
-					// Record failed login attempt
 					loginRequests.inc({ status: 'failure' });
 					return reply
 						.status(401)
@@ -50,7 +45,6 @@ export async function handleLogIn(
 					user.passwordHash
 				) : false;
 				if (!passwordCheck) {
-					// Record failed login attempt
 					loginRequests.inc({ status: 'failure' });
 					return reply
 						.status(401)
@@ -58,12 +52,12 @@ export async function handleLogIn(
 				}
 
 				// Check if 2FA is enabled
-				console.log("before 2fa");
+				//console.log("before 2fa");
 				if (user.isTwoFactorEnabled) {
 					if (!twoFactorToken) {
-						console.log(
-							`🔍 LOGIN - 2FA enabled for user, type: ${user.twoFactorType}`
-						);
+						// console.log(
+						// 	`🔍 LOGIN - 2FA enabled for user, type: ${user.twoFactorType}`
+						// );
 
 						// POUR 2FA EMAIL : Envoyer automatiquement un code
 						if (user.twoFactorType === "email") {
@@ -72,9 +66,9 @@ export async function handleLogIn(
 								Date.now() + 10 * 60 * 1000
 							);
 
-							console.log(
-								`🔑 LOGIN - Generating code: ${code}, expires: ${expiresAt}`
-							);
+							// console.log(
+							// 	`🔑 LOGIN - Generating code: ${code}, expires: ${expiresAt}`
+							// );
 
 							await prisma.user.update({
 								where: { id: user.id },
@@ -86,9 +80,9 @@ export async function handleLogIn(
 
 							await send2FACodeEmail(user.email, code);
 
-							console.log(
-								`✅ LOGIN - Code sent to ${user.email}`
-							);
+							// console.log(
+							// 	`✅ LOGIN - Code sent to ${user.email}`
+							// );
 						}
 
 						return reply.status(200).send({
@@ -97,7 +91,7 @@ export async function handleLogIn(
 							message: "2FA verification required",
 						});
 					}
-					console.log("after 2fa");
+					//console.log("after 2fa");
 
 					// Verify 2FA token based on type
 					const { verifyTOTPCode, verifyEmailCode } = await import(
@@ -137,7 +131,7 @@ export async function handleLogIn(
 					}
 				}
 
-				console.log("before JWT");
+				//console.log("before JWT");
 				// JWT generation - Only update if user wasn't already connected
 
 				const wasAlreadyConnected = sessionManager.isUserOnline(user.username);
@@ -149,12 +143,12 @@ export async function handleLogIn(
 					},
 				});
 
-				console.log("✅ User status :", user.connected);
-				console.log("🔑 Generating JWT for user:", user.username);
-				console.log(
-					"🔑 Secret key:",
-					secretKey || "fallback-secret-key"
-				);
+				// console.log("✅ User status :", user.connected);
+				// console.log("🔑 Generating JWT for user:", user.username);
+				// console.log(
+				// 	"🔑 Secret key:",
+				// 	secretKey || "fallback-secret-key"
+				// );
 
 				const token = jwt.sign(
 					{
@@ -179,11 +173,9 @@ export async function handleLogIn(
 				// Record successful login attempt
 				loginRequests.inc({ status: 'success' });
 
-				console.log("🔑 Generated token:", token);
-
 				return reply.send({
 					success: true,
-					token: token, // Envoyer le JWT au frontend
+					token: token,
 					user: {
 						id: user.id,
 						username: user.username,
@@ -193,7 +185,6 @@ export async function handleLogIn(
 				});
 			} catch (err) {
 				console.error("Login error:", err);
-				// Record failed login attempt due to server error
 				loginRequests.inc({ status: 'failure' });
 				reply.status(500).send({
 					success: false,
@@ -204,7 +195,6 @@ export async function handleLogIn(
 	);
 
 	app.get("/api/me", async (request: FastifyRequest, reply: FastifyReply) => {
-		// Read JWT from header Authorization
 		const authHeader = request.headers.authorization;
 		if (!authHeader || !authHeader.startsWith("Bearer ")) {
 			return reply
@@ -212,10 +202,9 @@ export async function handleLogIn(
 				.send({ success: false, message: "Not authenticated" });
 		}
 
-		const token = authHeader.substring(7); // Remove "Bearer "
+		const token = authHeader.substring(7);
 
 		try {
-			// Verify and decode the JWT
 			const decoded = jwt.verify(
 				token,
 				secretKey || "fallback-secret-key"
@@ -223,7 +212,6 @@ export async function handleLogIn(
 
 			sessionManager.updateActivity(decoded.username);
 
-			// Get the user from the DB
 			const user = await prisma.user.findUnique({
 				where: { id: decoded.id },
 				select: {
@@ -234,6 +222,7 @@ export async function handleLogIn(
 					gamesPlayed: true,
 					wins: true,
 					losses: true,
+					googleId: true,
 				},
 			});
 
@@ -264,7 +253,6 @@ export async function handleLogIn(
 					secretKey || "fallback-secret-key"
 				) as any;
 
-				// Get user's current connection status before updating
 				const user = await prisma.user.findUnique({
 					where: { id: decoded.id },
 					select: { connected: true }
@@ -334,24 +322,59 @@ export function requireAuth() {
 export async function secureRoutes(app: FastifyInstance, prisma: PrismaClient) {
 	const authMiddleware = requireAuth();
 
-	// Apply the middleware to the protected routes
 	app.addHook("preHandler", async (request, reply) => {
 		const protectedPaths = [
 			"/api/login",
+			"/api/signup",
+			"/api/me",
+			"/api/logout",
+			"/api/auth/",
 			"/api/profile",
 			"/api/profile/avatar",
+			"/api/2fa/setup-totp-temp/:username",
+			"/api/2fa/enable-email-temp/:username",
 			"/api/profile/username",
+			"/api/2fa/verify-totp-temp/:username/:code",
+			"/api/user/:userId/2fa/disable",
+			"/api/user/:userId/2fa/status",
 			"/api/profile/password",
+			"/api/2fa/login",
+			"/api/2fa/enable-email-temp",
 			"/api/profile/matches",
 			"/api/profile/friends",
+			"/api/2fa/verify",
+			"/api/2fa/totp/setup",
+			"/api/2fa/totp/verify",
+			"/api/2fa/send",
+			"/api/2fa/email/verify",
+			"/api/2fa/disable",
 			"/api/profile/friends/add",
+			"/api/2fa/email/send",
+			"/api/game/stats",
 			"/api/game",
+			"/api/games",
+			"/api/game/add",
+			"/api/game/create",
+			"/api/game/:gameId/state",
+			"/api/game/:gameId/ball",
+			"/api/game/:gameId/paddles",
+			"/api/game/:gameId/score",
 			"/api/chat",
-		];
+			"/api/chat/send",
+			"/api/chat/history",
+			"/api/notifications/tournament",
+			"/api/notifications/tournament/user",
+			"/api/notifications/tournament/next-game",
+			"/api/notifications/:userId",
+			"/api/notifications/:notificationId/read",
+			"/api/notifications/:userId/read-all",
+			"/avatars/:filename",
+			'/api/profile/user/:username/online',
+			"/api/profile/:userId/2fa-status",
 
-		const isProtected = protectedPaths.some((path) =>
-			request.url.startsWith(path)
-		);
+			];
+
+		const isProtected = protectedPaths.includes(request.url.split('?')[0]);
 
 		if (isProtected) {
 			await authMiddleware(request, reply);

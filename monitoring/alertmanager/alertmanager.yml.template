@@ -1,0 +1,23 @@
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: '__ALERT_EMAIL__'
+  smtp_auth_username: '__ALERT_EMAIL__'
+  smtp_auth_password: '__ALERT_PASSWORD__'
+  smtp_require_tls: true
+
+route:
+  group_by: ['alertname', 'service', 'severity']
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 5m
+  receiver: 'email-admin'
+
+receivers:
+  - name: 'email-admin'
+    email_configs:
+      - to: '__ALERT_EMAIL__'
+        headers: { Subject: '{{ template "email.subject" . }}' }
+        html: '{{ template "email.body" . }}'
+
+templates:
+  - '/etc/alertmanager/email.tmpl'

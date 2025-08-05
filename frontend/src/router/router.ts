@@ -1,27 +1,27 @@
-// Add these imports at the very top of the file:
-import React from "react";
-import ReactDOM from "react-dom/client";
-import TwoFactorVerifyPage from "../pages/TwoFactorVerifyPage";
+export interface Page {
+    render(): string;
+    onMount?(): void;
+    cleanup?(): void;
+}
 
 class Router {
     private routes: Map<string, () => HTMLElement> = new Map();
     private dynamicRoutes: Array<{pattern: string, handler: () => HTMLElement}> = [];
     private protectedRoutes: Set<string> = new Set();
     private currentRoute: string = '/';
+    private currentPageInstance: any = null;
 
     constructor() {
         //this.setupRoutes();
-        this.setupProtectedRoutes();
+        this.setupProtectedRoutes();``
         this.handlePopState();
     }
 
     private setupProtectedRoutes() {
-        // Définir les routes qui nécessitent une authentification
         this.protectedRoutes.add('/home');
         this.protectedRoutes.add('/profile');
         //this.protectedRoutes.add('/game');
         this.protectedRoutes.add('/chat');
-        this.protectedRoutes.add('/leaderboard');
     }
 
     private isProtectedRoute(route: string): boolean {
@@ -70,12 +70,14 @@ class Router {
       }
     }
 
-    start() {
+    start()
+    {
       /*
       This function is called when the app starts.
       It handles the initial route.
       */
-      this.handleRoute();
+        //this.renderRoute(window.location.pathname);
+        this.navigate('/game');
     }
 
 //   navigate(path: string) {
@@ -97,18 +99,18 @@ class Router {
     }
 
     private async renderRoute(route: string): Promise<void> {
-        console.log("🎯 renderRoute called with route:", route);
+        //console.log("🎯 renderRoute called with route:", route);
         
         // Check if route requires authentication
         if (this.isProtectedRoute(route)) {
-            console.log("🔐 Protected route detected, checking authentication...");
+            //console.log("🔐 Protected route detected, checking authentication...");
             const authToken = sessionStorage.getItem('authToken');
             if (!authToken) {
-                console.log("❌ No auth token found, redirecting to login");
+                //console.log("❌ No auth token found, redirecting to login");
                 this.navigate('/login');
                 return;
             }
-            
+
             // Verify token by calling /api/me
             try {
                 const response = await fetch('/api/me', {
@@ -116,59 +118,72 @@ class Router {
                         'Authorization': `Bearer ${authToken}`
                     }
                 });
-                
+
                 if (!response.ok) {
-                    console.log("❌ Auth verification failed, redirecting to login");
+                    //console.log("❌ Auth verification failed, redirecting to login");
                     sessionStorage.removeItem('authToken');
                     this.navigate('/login');
                     return;
                 }
-                console.log("✅ Authentication verified");
+                //console.log("✅ Authentication verified");
             } catch (error) {
-                console.log("❌ Auth check error, redirecting to login");
+                //console.log("❌ Auth check error, redirecting to login");
                 sessionStorage.removeItem('authToken');
                 this.navigate('/login');
                 return;
             }
         }
-        
-        // Check exact routes first
+
         let routeHandler = this.routes.get(route);
         let routeParams: any = {};
 
-        console.log("🔍 Available routes:", Array.from(this.routes.keys()));
-        console.log("🎮 Route handler found:", !!routeHandler);
+        //console.log("🔍 Available routes:", Array.from(this.routes.keys()));
+        //console.log("🎮 Route handler found:", !!routeHandler);
 
         // If no exact match, check dynamic routes
         if (!routeHandler) {
-            console.log("🔍 Checking dynamic routes...");
+            //console.log("🔍 Checking dynamic routes...");
             for (const dynamicRoute of this.dynamicRoutes) {
                 const params = this.extractParams(route, dynamicRoute.pattern);
                 if (params) {
                     routeHandler = dynamicRoute.handler;
                     routeParams = params;
-                    console.log("✅ Dynamic route matched:", dynamicRoute.pattern);
+                    //console.log("✅ Dynamic route matched:", dynamicRoute.pattern);
                     break;
                 }
             }
         }
 
         if (!routeHandler) {
-            console.error("❌ No route handler found for:", route);
             this.navigate('/404');
             return;
         }
 
         const app = document.getElementById('app');
         if (app) {
-            console.log("🎨 Rendering route:", route);
+            //console.log("🎨 Rendering route:", route);
+            
+            // Cleanup previous page if it has onUnmount method
+            if (this.currentPageInstance && typeof this.currentPageInstance.onUnmount === 'function') {
+                //console.log("🧹 Cleaning up previous page");
+                this.currentPageInstance.onUnmount();
+            }
+
             app.innerHTML = '';
-            // Store route params globally so components can access them
             (window as any).routeParams = routeParams;
             const element = routeHandler();
+
+            if ((element as any).__pageInstance) {
+                this.currentPageInstance = (element as any).__pageInstance;
+            } else {
+                this.currentPageInstance = null;
+            }
+
             app.appendChild(element);
-            console.log("✅ Route rendered successfully:", route);
-        } else {
+            //console.log("✅ Route rendered successfully:", route);
+        }
+        else
+        {
             console.error("❌ App element not found");
         }
     }
@@ -216,7 +231,7 @@ class Router {
 		});
 	}
 
-    
+
 }
 
 // Add this helper function after your Router class (before export):

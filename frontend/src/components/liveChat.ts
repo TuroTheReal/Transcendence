@@ -1,5 +1,3 @@
-import { classes } from "../styles/retroStyles.js";
-import { createNeonContainer } from "../styles/neonTheme.js";
 import { i18n } from "../services/i18n.js";
 
 export function createLiveChat() {
@@ -7,15 +5,15 @@ export function createLiveChat() {
   element.className = "fixed bottom-4 right-4 z-50";
   
   const openChatButton = document.createElement("button");
-  openChatButton.className = `${classes.actionButton} px-4 py-2 rounded-full shadow-lg`;
+  openChatButton.className = `bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/50 text-purple-300 font-bold py-2 px-6 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-neon-purple hover:border-purple-300 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-purple-400/40 before:to-transparent before:transition-all before:duration-500 hover:before:left-full px-4 py-2 rounded-full shadow-lg`;
   openChatButton.innerHTML = `
-    <span class="${classes.neonText}">
+    <span class="text-purple-300 drop-shadow-[0_0_3px_rgb(187,134,252)] drop-shadow-[0_0_6px_rgb(187,134,252)] drop-shadow-[0_0_9px_rgb(187,134,252)] animate-pulse">
       💬 Chat Live
     </span>
   `;
   
   const maxChats = 1;
-  const chats = [];
+  const chats: HTMLElement[] = [];
   
   element.appendChild(openChatButton);
   
@@ -33,7 +31,7 @@ export function createLiveChat() {
     chatWindow.style.right = "0";
     
     const closeButton = chatWindow.querySelector('#close-chat');
-    closeButton.addEventListener("click", () => {
+    closeButton?.addEventListener("click", () => {
       element.removeChild(chatWindow);
       chats.splice(chats.indexOf(chatWindow), 1);
     });
@@ -44,7 +42,7 @@ export function createLiveChat() {
 
 function createChatWindow(): HTMLElement {
   const chatWindow = document.createElement("div");
-  chatWindow.className = `${classes.retroPanel} rounded-xl w-80 h-96 flex flex-col shadow-2xl animate-slide-up`;
+  chatWindow.className = `bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm rounded-xl w-80 h-96 flex flex-col shadow-2xl animate-slide-up`;
   
   chatWindow.innerHTML = `
     <style>
@@ -71,31 +69,31 @@ function createChatWindow(): HTMLElement {
     </style>
     
     <!-- Chat Header -->
-    <div class="${classes.retroPanel} border-b-2 border-purple-400/30 p-4 flex justify-between items-center rounded-t-xl">
-      <h3 class="${classes.neonText} font-bold text-lg">
+    <div class="bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm border-b-2 border-purple-400/30 p-4 flex justify-between items-center rounded-t-xl">
+      <h3 class="text-purple-300 drop-shadow-[0_0_3px_rgb(187,134,252)] drop-shadow-[0_0_6px_rgb(187,134,252)] drop-shadow-[0_0_9px_rgb(187,134,252)] animate-pulse font-bold text-lg">
         💬 Chat Live
       </h3>
-      <button id="close-chat" class="${classes.retroButton} text-red-400 text-sm px-2 py-1 rounded hover:${classes.neonBorder}">
+      <button id="close-chat" class="bg-gradient-to-br from-purple-900/20 via-black to-purple-900/20 border-2 border-purple-400 shadow-[0_0_10px_rgb(157,78,221,0.4),inset_0_0_10px_rgb(157,78,221,0.2)] transition-all duration-300 relative overflow-hidden hover:border-purple-300 hover:shadow-[0_0_20px_rgb(157,78,221),inset_0_0_20px_rgb(157,78,221,0.3)] hover:scale-105 before:content-[''] before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-purple-400/40 before:to-transparent before:transition-all before:duration-500 hover:before:left-full text-red-400 text-sm px-2 py-1 rounded hover:shadow-[0_0_10px_rgb(157,78,221),inset_0_0_10px_rgb(157,78,221),0_0_20px_rgb(157,78,221,0.4)]">
         ✕
       </button>
     </div>
     
     <!-- Chat Messages -->
     <div class="flex-1 p-4 overflow-y-auto" id="live-chat-messages">
-      <div class="text-center ${classes.neonText} py-4">
+      <div class="text-center text-purple-300 drop-shadow-[0_0_3px_rgb(187,134,252)] drop-shadow-[0_0_6px_rgb(187,134,252)] drop-shadow-[0_0_9px_rgb(187,134,252)] animate-pulse py-4">
         💭 Conversation en temps réel
       </div>
     </div>
     
     <!-- Chat Input -->
-    <div class="${classes.retroPanel} border-t-2 border-purple-400/30 p-4 flex gap-2 rounded-b-xl">
+    <div class="bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm border-t-2 border-purple-400/30 p-4 flex gap-2 rounded-b-xl">
       <input 
         type="text" 
         placeholder="Tapez votre message..." 
         id="live-message-input" 
-        class="${classes.tournamentInput} flex-1 text-sm"
+        class="bg-gradient-to-br from-black to-purple-900/20 border-2 border-purple-400 text-purple-300 shadow-[0_0_10px_rgb(157,78,221,0.4),inset_0_0_10px_rgb(157,78,221,0.2)] focus:border-purple-300 focus:shadow-[0_0_20px_rgb(157,78,221),inset_0_0_20px_rgb(157,78,221,0.3)] focus:outline-none px-4 py-2 rounded-lg w-full text-center font-bold flex-1 text-sm"
       >
-      <button id="send-live-message" class="${classes.actionButton} px-3 py-1 text-sm">
+      <button id="send-live-message" class="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/50 text-purple-300 font-bold py-2 px-6 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-neon-purple hover:border-purple-300 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-purple-400/40 before:to-transparent before:transition-all before:duration-500 hover:before:left-full px-3 py-1 text-sm">
         📤
       </button>
     </div>
@@ -135,8 +133,8 @@ function addMessageToChat(container: HTMLElement, message: string, sender: 'me' 
   
   messageDiv.innerHTML = `
     <div class="max-w-xs px-3 py-2 rounded-lg ${sender === 'me' 
-      ? `${classes.retroPanel} border-purple-400 text-purple-300` 
-      : `${classes.retroPanel} border-cyan-400 text-cyan-300`
+      ? `bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm border-purple-400 text-purple-300` 
+      : `bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm border-cyan-400 text-cyan-300`
     }">
       <p class="text-sm font-medium">${message}</p>
       <p class="text-xs opacity-75 mt-1">${new Date().toLocaleTimeString()}</p>

@@ -13,13 +13,12 @@ import { createServerGameVersusPage } from "./pages/ServerGameVersusPage";
 import { createServerGameMultiPage } from "./pages/ServerGameMultiPage";
 import { createTwoFactorVerifyPage } from "./pages/TwoFactorVerifyPage";
 import { i18n } from "./services/i18n";
+import globalNotificationService from "./services/GlobalNotificationService";
 
-// Initialize app
+
 async function initApp() {
-  // Initialize i18n before starting router
   await i18n.init();
 
-  // Configuration des routes
   router
     .addRoute('/', createGamePage)           
     .addRoute('/login', createLoginPage)
@@ -35,11 +34,21 @@ async function initApp() {
     .addRoute('/404', createNotFoundPage)
     .addRoute('/2fa-verify', createTwoFactorVerifyPage); // register the 2FA page
 
-  // Route dynamique pour les profils utilisateur
   router.addDynamicRoute('/profile/:username', createUserProfilePage);
   
   const token = sessionStorage.getItem('authToken');
   const currentPath = window.location.pathname;
+
+  if (token) {
+    const currentUser = sessionStorage.getItem("currentUser");
+    if (currentUser) {
+      setTimeout(() => {
+        globalNotificationService.connect();
+      }, 500);
+    } else {
+      console.log("🔧 No user data yet, skipping GlobalNotificationService connection from main.ts");
+    }
+  }
 
   if (currentPath === '/') {
     router.start();

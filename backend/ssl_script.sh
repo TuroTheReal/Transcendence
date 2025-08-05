@@ -22,9 +22,6 @@ chmod 644 ssl/cert.pem
 echo ""
 echo "✅ Certificats générés avec succès dans le dossier 'ssl/' !"
 echo ""
-echo "🔍 Vérification du certificat (vous devriez voir les bonnes IP/DNS dans 'Subject Alternative Name'):"
+echo "🔍 Vérification du certificat :"
 openssl x509 -in ssl/cert.pem -text -noout | grep -A 5 "Subject Alternative Name"
 
-echo ""
-echo "🚀 Vous pouvez maintenant relancer votre serveur."
-echo "   N'oubliez pas d'importer 'ssl/cert.pem' dans l'autorité de confiance de votre navigateur si l'erreur persiste."

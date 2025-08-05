@@ -1,11 +1,6 @@
-# version fusionne
 services:
 
-# connected user a verifier, pb parfois
-# Test alerte prometheus, email ?
-# push .pem ? .env ?
 # logger a check apres avoir enlever les consoles logs
-
 
   dev:
     user: "0:0"
@@ -13,7 +8,7 @@ services:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
-      target: dev
+      # target: dev
     volumes:
       - ..:/app
       - /app/node_modules
@@ -21,8 +16,9 @@ services:
       - "${MAIN_PORT}:3002"
       - "${METRICS_PORT}:3001"
       - "${HTTP_REDIRECT_PORT}:8080"
+      - "${PRISMA_PORT}:5555"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - DEBUG=true
       - LOGSTASH_HOST=${LOGSTASH_HOST}
       - LOGSTASH_PORT=${LOGSTASH_PORT}
@@ -36,48 +32,13 @@ services:
       - PUBLIC_IP=${PUBLIC_IP}
       - COOKIE_SECRET=${COOKIE_SECRET}
       - SECURITY_KEY=${SECURITY_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     restart: unless-stopped
     depends_on:
       - logstash
     networks:
       - app-network
-
-  # prod:
-#     user: "0:0"
-  #   container_name: trans-prod
-  #   build:
-  #     context: ..
-  #     dockerfile: .devcontainer/Dockerfile
-  #     target: prod
-  #   # volumes:
-  #   #   - ..:/app
-  #   # - /app/node_modules
-  #   ports:
-  #     - "${MAIN_PORT}:3000"
-    #   - "${METRICS_PORT}:3001"
-    #   - "${HTTP_REDIRECT_PORT}:8080"
-  #   command: ["npm", "start"]
-    # environment:
-    #   - NODE_ENV=production
-    #   - NODE_ENV=development
-    #   - DEBUG=true
-    #   - LOGSTASH_HOST=${LOGSTASH_HOST}
-    #   - LOGSTASH_PORT=${LOGSTASH_PORT}
-    #   - ELASTIC_URL=${ELASTIC_URL}
-    #   - ELASTIC_USER=${ELASTIC_USER}
-    #   - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-    #   - DATABASE_URL=${DATABASE_URL}
-    #   - MAIN_PORT=${MAIN_PORT}
-    #   - METRICS_PORT=${METRICS_PORT}
-    #   - HTTP_REDIRECT_PORT=${HTTP_REDIRECT_PORT}
-    #   - PUBLIC_IP=${PUBLIC_IP}
-    #   - COOKIE_SECRET=${COOKIE_SECRET}
-    #   - SECURITY_KEY=${SECURITY_KEY}
-  #   depends_on:
-  #     - logstash
-  #   networks:
-  #     - app-network
-  #   restart: unless-stopped
 
 
   elasticsearch:
@@ -241,7 +202,7 @@ services:
       - '--path.rootfs=/rootfs'
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-      - '--collector.systemd'
+      # - '--collector.systemd'
       - '--collector.processes'
     networks:
       - app-network
@@ -288,16 +249,19 @@ services:
     ports:
       - "${ALERT_PORT}:9093"
     volumes:
-      - ./../monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
-      - ./../monitoring/alertmanager/templates/email.tmpl:/etc/alertmanager/email.tmpl
+      - ./../monitoring/alertmanager/alertmanager.yml.template:/etc/alertmanager/alertmanager.yml.template:ro
+      - ./../monitoring/alertmanager/templates/email.tmpl:/etc/alertmanager/email.tmpl:ro
       - alertmanager_data:/alertmanager
+      - ./../monitoring/alertmanager/entrypoint.sh:/entrypoint.sh:ro
     environment:
       - ALERT_PORT=${ALERT_PORT}
-    command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
-      - '--web.external-url=http://localhost:${ALERT_PORT}'
-      - '--cluster.listen-address='
+      - ALERT_EMAIL=${ALERT_EMAIL}
+      - ALERT_PASSWORD=${ALERT_PASSWORD}
+    entrypoint: ["/entrypoint.sh"]
+      # - '--config.file=/etc/alertmanager/alertmanager.yml'
+      # - '--storage.path=/alertmanager'
+      # - '--web.external-url=http://localhost:${ALERT_PORT}'
+      # - '--cluster.listen-address='
     depends_on:
       - prometheus
     networks:

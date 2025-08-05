@@ -17,7 +17,7 @@ export function createUserProfilePage(): HTMLElement {
 			<div class="card max-w-md w-full text-center slide-up">
 				<h2 class="section-title text-accent mb-4">${i18n.t('user_profile.error_title')}</h2>
 				<p class="text-muted">${i18n.t('user_profile.username_missing')}</p>
-				<button class="btn-primary mt-4" data-route="/home">${i18n.t('user_profile.back_to_home')}</button>
+				<button class="btn-primary mt-4" data-route="/game">${i18n.t('user_profile.back_to_home')}</button>
 			</div>
 		`;
 		

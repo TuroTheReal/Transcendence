@@ -18,7 +18,7 @@ const BCRYPT_ROUNDS = 12;
 interface ParsedUserData {
 	usernameValue: string;
 	passwordValue: string;
-	emailValue?: string;
+	emailValue: string;
 	hashedPassword: string;
 	avatarFile: any | null;
 }
@@ -85,11 +85,11 @@ async function parseUserFormData(
 		}
 		const hashedPassword = await bcrypt.hash(passwordValue, BCRYPT_ROUNDS);
 
-		console.log("Parsed user data:", {
-			username: usernameValue,
-			hasEmail: !!emailValue,
-			hasAvatar: !!avatarFile
-		});
+		// console.log("Parsed user data:", {
+		// 	username: usernameValue,
+		// 	hasEmail: !!emailValue,
+		// 	hasAvatar: !!avatarFile
+		// });
 
 		return {
 			usernameValue,
@@ -99,7 +99,6 @@ async function parseUserFormData(
 			avatarFile
 		};
 	} catch (error) {
-		console.error("Error parsing form data:", error);
 		reply.code(400).send({
 			error: "Invalid form data format."
 		});
@@ -108,7 +107,7 @@ async function parseUserFormData(
 }
 
 async function saveAvatar(avatarFile: any, username: string): Promise<string> {
-	console.log("PROJECT_ROOT", PROJECT_ROOT);
+	//console.log("PROJECT_ROOT", PROJECT_ROOT);
 	const avatarsDir = path.join(PROJECT_ROOT, "./public/avatars");
 	if (!fs.existsSync(avatarsDir)) {
 		fs.mkdirSync(avatarsDir, { recursive: true });
@@ -139,12 +138,17 @@ async function createUser(
 	if (existingUser) {
 		throw new Error("Username already exists");
 	}
-	console.log("About to create new user");
-	console.log("avatarUrl: ", avatarPath);
-	// Générer un email unique avec timestamp et random
-	const timestamp = Date.now();
-	const random = Math.random().toString(36).substring(2, 8);
-	const uniqueEmail = emailValue || `${username}_${timestamp}_${random}@transcendence.local`;
+	//const timestamp = Date.now();
+	//const random = Math.random().toString(36).substring(2, 8);
+	const uniqueEmail = emailValue //|| `${username}_${timestamp}_${random}@transcendence.local`;
+
+	const existingEmail = await prisma.user.findUnique({
+		where: { email: uniqueEmail },
+	});
+
+	if (existingEmail) {
+		throw new Error("Email address already taken.");
+	}
 
 	const user = await prisma.user.create({
 		data: {
@@ -177,16 +181,21 @@ export async function registerNewUser(
 			avatar: userData.avatarFile,
 			email: userData.emailValue
 		};
-		console.log("userInfoForValidation: ", userInfoForValidation);
+		//console.log("userInfoForValidation: ", userInfoForValidation);
 		const checkResult = UserSignUpCheck(userInfoForValidation);
+		//console.log("checkResult: ", checkResult);
 		if (checkResult === true){
 			const { usernameValue, hashedPassword, avatarFile, emailValue } =
 				userData;
-			console.log("AFTER USER SIGNUP CHECK");
+			//console.log("AFTER USER SIGNUP CHECK");
 			try {
 				let avatarPath = "";
-				if (avatarFile)
+				if (avatarFile){
+					//console.log("avatarFile: ", avatarFile);
 					avatarPath = await saveAvatar(avatarFile, usernameValue);
+				} else {
+					avatarPath = "/avatars/defaultAvatar.jpg";
+				}
 				const created = await createUser(
 					prisma,
 					usernameValue,
@@ -195,16 +204,15 @@ export async function registerNewUser(
 					emailValue || ""
 				);
 
-				console.log("Created user:", created);
+				//console.log("Created user:", created);
 				reply.code(200).send({ success: true });
-			} catch (err: any) {
-				console.error("Signup error:", err);
-				if (err.message === "Username already exists") {
+			} catch (error: any) {
+				if (error.message === "Username already exists") {
 					reply.code(409).send({ error: "Username already exists" });
+				} else if (error.message === "Email address already taken."){
+					reply.code(409).send({ error: "Email address already taken." });
 				} else {
-					reply.code(500).send({
-						error: "Failed to create account. Please try again."
-					});
+					reply.code(400).send({ error: "Failed to create account. Please try again." });
 				}
 			}
 		} else {

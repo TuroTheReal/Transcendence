@@ -64,7 +64,7 @@ export class ServerPongClient {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private ws: WebSocket | null = null;
-    private gameId: string | null = null;
+    private gameId: string | undefined = undefined;
     private gameMode: 'solo' | 'versus' | 'multi' = 'versus';
     private isConnecting: boolean = false;
     
@@ -100,19 +100,19 @@ export class ServerPongClient {
     async connectToGame(gameId?: string, mode: 'solo' | 'versus' | 'multi' = 'versus'): Promise<void> {
         // Éviter les connexions multiples avec une vérification plus stricte
         if (this.isConnecting) {
-            console.log("⚠️ Connection already in progress, ignoring...");
+            //console.log("⚠️ Connection already in progress, ignoring...");
             return Promise.reject(new Error('Connection already in progress'));
         }
         
         // Éviter de se connecter si déjà connecté à un jeu
         if (this.ws && this.ws.readyState === WebSocket.OPEN && this.gameId) {
-            console.log("⚠️ Already connected to game:", this.gameId);
+            //console.log("⚠️ Already connected to game:", this.gameId);
             return Promise.reject(new Error('Already connected to a game'));
         }
         
         // Fermer la connexion existante si elle existe
         if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
-            console.log("🔌 Closing existing WebSocket connection...");
+            //console.log("🔌 Closing existing WebSocket connection...");
             this.ws.close();
             this.ws = null;
         }
@@ -122,7 +122,7 @@ export class ServerPongClient {
         try {
             // Si pas de gameId fourni, créer une nouvelle partie
             if (!gameId) {
-                console.log("🎮 Creating new game...");
+                //console.log("🎮 Creating new game...");
                 const response = await fetch('/api/game/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -132,7 +132,7 @@ export class ServerPongClient {
                 const result = await response.json();
                 if (result.success) {
                     gameId = result.gameId;
-                    console.log("✅ Game created:", gameId);
+                    //console.log("✅ Game created:", gameId);
                 } else {
                     throw new Error('Failed to create game');
                 }
@@ -143,7 +143,7 @@ export class ServerPongClient {
             await this.connectWebSocket();
             
             // ⚡ DÉMARRER LA PARTIE AUTOMATIQUEMENT
-            console.log("🚀 Auto-starting game...");
+            //console.log("🚀 Auto-starting game...");
             
         } catch (error) {
             console.error("❌ Failed to connect to game:", error);
@@ -165,17 +165,17 @@ export class ServerPongClient {
             const playerId = `player_${Date.now()}`;
             const wsUrl = `${protocol}//${window.location.host}/ws/game/${this.gameId}?playerId=${playerId}&mode=${this.gameMode}`;
             
-            console.log("🔌 Connecting to WebSocket:", wsUrl);
-            console.log("🔍 WebSocket Protocol:", protocol);
-            console.log("🔍 Host:", window.location.host);
-            console.log("🔍 Game Mode:", this.gameMode);
-            console.log("🔍 Current page protocol:", window.location.protocol);
+            //console.log("🔌 Connecting to WebSocket:", wsUrl);
+            //console.log("🔍 WebSocket Protocol:", protocol);
+            //console.log("🔍 Host:", window.location.host);
+            //console.log("🔍 Game Mode:", this.gameMode);
+            //console.log("🔍 Current page protocol:", window.location.protocol);
             
             this.ws = new WebSocket(wsUrl);
             
             this.ws.onopen = () => {
-                console.log("✅ WebSocket connected");
-                console.log("🔍 WebSocket readyState:", this.ws?.readyState);
+                //console.log("✅ WebSocket connected");
+                //console.log("🔍 WebSocket readyState:", this.ws?.readyState);
                 resolve();
             };
             
@@ -189,10 +189,10 @@ export class ServerPongClient {
             };
             
             this.ws.onclose = (event) => {
-                console.log("👋 WebSocket disconnected");
-                console.log("🔍 Close code:", event.code);
-                console.log("🔍 Close reason:", event.reason);
-                console.log("🔍 Was clean:", event.wasClean);
+                //console.log("👋 WebSocket disconnected");
+                //console.log("🔍 Close code:", event.code);
+                //console.log("🔍 Close reason:", event.reason);
+                //console.log("🔍 Was clean:", event.wasClean);
                 this.handleDisconnection();
             };
             
@@ -216,12 +216,12 @@ export class ServerPongClient {
                 break;
                 
             default:
-                console.log("Unknown server message:", data);
+                //console.log("Unknown server message:", data);
         }
     }
 
     private handleGameEnd(data: GameEndMessage) {
-        console.log(`🏆 Game ended! Winner: ${data.winner}`);
+        //console.log(`🏆 Game ended! Winner: ${data.winner}`);
         
         let message = '';
         if (data.winner === 'left') {
@@ -263,14 +263,14 @@ export class ServerPongClient {
         this.keys_pressed[e.key] = true;
         this.sendInputToServer();
         
-        console.log(`🎮 Key pressed: ${e.key}`);
+        //console.log(`🎮 Key pressed: ${e.key}`);
     };
 
     private handle_keyup = (e: KeyboardEvent) => {
         this.keys_pressed[e.key] = false;
         this.sendInputToServer();
         
-        console.log(`🎮 Key released: ${e.key}`);
+        //console.log(`🎮 Key released: ${e.key}`);
     };
 
     private sendInputToServer() {
@@ -282,16 +282,16 @@ export class ServerPongClient {
             };
             
             this.ws.send(JSON.stringify(inputMessage));
-            console.log('📤 Sending input to server:', inputMessage);
+            //console.log('📤 Sending input to server:', inputMessage);
         } else {
-            console.log('❌ Cannot send input - WebSocket not ready:', this.ws?.readyState);
+            //console.log('❌ Cannot send input - WebSocket not ready:', this.ws?.readyState);
         }
     }
 
     // =============== RENDU ===============
     
     start(): void {
-        console.log("🎮 Starting client-side rendering...");
+        //console.log("🎮 Starting client-side rendering...");
         this.render_loop();
     }
 
@@ -383,25 +383,25 @@ export class ServerPongClient {
         }
 
         // === 4. BALLE PULSANTE ET CLIGNOTANTE ===
-        const pulse = 10 + Math.sin(Date.now() / 100) * 2;
+        //const pulse = 10 + Math.sin(Date.now() / 100) * 2;
         const blink = Math.floor(Date.now() / 200) % 2 === 0;
         this.ctx.shadowColor = blink ? "#ffff00" : "#ff00ff";
         this.ctx.shadowBlur = 25;
         this.ctx.fillStyle = blink ? "#ffff00" : "#ff00ff";
         this.ctx.beginPath();
-        this.ctx.arc(ball.ball_x, ball.ball_y, pulse, 0, Math.PI * 2);
+        this.ctx.arc(ball.ball_x, ball.ball_y, 10, 0, Math.PI * 2);
         this.ctx.fill();
 
         // === 5. HUD (score, vitesse) ===
-        this.ctx.shadowBlur = 0;
-        this.ctx.fillStyle = "#00ffcc";
-        this.ctx.font = "bold 18px 'Courier New', monospace";
-        const currentSpeed = Math.sqrt(ball.ball_dir_x * ball.ball_dir_x + ball.ball_dir_y * ball.ball_dir_y);
-        this.ctx.fillText(`🎯 Vitesse: ${currentSpeed.toFixed(2)}`, 20, 30);
+        // this.ctx.shadowBlur = 0;
+        // this.ctx.fillStyle = "#00ffcc";
+        // this.ctx.font = "bold 18px 'Courier New', monospace";
+        // const currentSpeed = Math.sqrt(ball.ball_dir_x * ball.ball_dir_x + ball.ball_dir_y * ball.ball_dir_y);
+        // this.ctx.fillText(`🎯 Vitesse: ${currentSpeed.toFixed(2)}`, 20, 30);
 
-        this.ctx.fillStyle = "#ff66cc";
-        this.ctx.font = "14px 'Courier New', monospace";
-        this.ctx.fillText(`⏱️ Latence: ${Date.now() - this.gameState.timestamp} ms`, 20, 55);
+        // this.ctx.fillStyle = "#ff66cc";
+        // this.ctx.font = "14px 'Courier New', monospace";
+        // this.ctx.fillText(`⏱️ Latence: ${Date.now() - this.gameState.timestamp} ms`, 20, 55);
 
         // === 6. SCORE ===
         this.updateScoreDisplay(state.left_score, state.right_score);
@@ -447,7 +447,7 @@ export class ServerPongClient {
     // =============== NETTOYAGE ===============
     
     disconnect(): void {
-        console.log("🔌 Disconnecting from server...");
+        //console.log("🔌 Disconnecting from server...");
         
         // Arrêter l'animation
         if (this.animationId) {
@@ -458,7 +458,7 @@ export class ServerPongClient {
         // Fermer la connexion WebSocket
         if (this.ws) {
             if (this.ws.readyState === WebSocket.OPEN) {
-                console.log("📤 Sending disconnect message to server...");
+                //console.log("📤 Sending disconnect message to server...");
                 this.ws.send(JSON.stringify({ type: 'disconnect' }));
             }
             this.ws.close(1000, 'Client disconnecting');
@@ -466,7 +466,7 @@ export class ServerPongClient {
         }
         
         // Réinitialiser les états
-        this.gameId = null;
+        this.gameId = undefined;
         this.gameState = null;
         this.isConnecting = false;
         
@@ -474,7 +474,7 @@ export class ServerPongClient {
         document.removeEventListener("keydown", this.handle_keydown);
         document.removeEventListener("keyup", this.handle_keyup);
         
-        console.log("✅ Client disconnected successfully");
+        //console.log("✅ Client disconnected successfully");
     }
 
     // =============== MÉTHODES PUBLIQUES POUR COMPATIBILITÉ ===============
@@ -502,7 +502,7 @@ export class ServerPongClient {
         return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
     }
 
-    get currentGameId(): string | null {
+    get currentGameId(): string | undefined {
         return this.gameId;
     }
     
@@ -525,9 +525,11 @@ export class ServerGame_solo {
     private mode: 'solo' | 'versus' | 'multi';
     private isStarting: boolean = false;
     private isDisconnected: boolean = false;
+    private gameRoomId?: string;
 
-    constructor(mode: 'solo' | 'versus' | 'multi') {
+    constructor(mode: 'solo' | 'versus' | 'multi', gameRoomId?: string) {
         this.mode = mode;
+        this.gameRoomId = gameRoomId;
         this.canvas = document.getElementById("gameCanvas") as HTMLCanvasElement;
         this.restart_btn = document.getElementById("restartBtn") as HTMLButtonElement;
         
@@ -542,29 +544,29 @@ export class ServerGame_solo {
     async start_game_loop(): Promise<void> {
         // Éviter les démarrages multiples
         if (this.isStarting) {
-            console.log("⚠️ Game already starting, ignoring...");
+            //console.log("⚠️ Game already starting, ignoring...");
             return Promise.reject(new Error('Game already starting'));
         }
         
         // Ne pas redémarrer si déjà déconnecté
         if (this.isDisconnected) {
-            console.log("⚠️ Game was disconnected, ignoring start request...");
+            //console.log("⚠️ Game was disconnected, ignoring start request...");
             return Promise.reject(new Error('Game was disconnected'));
         }
         
         // Éviter de démarrer si déjà connecté
         if (this.client.isConnected) {
-            console.log("⚠️ Game already connected, ignoring start request...");
+            //console.log("⚠️ Game already connected, ignoring start request...");
             return Promise.reject(new Error('Game already connected'));
         }
         
         this.isStarting = true;
         
         try {
-            console.log(`🎮 Starting ${this.mode} game with server-side logic...`);
+            //console.log(`🎮 Starting ${this.mode} game with server-side logic...`);
             
             // Se connecter au serveur et créer une partie
-            await this.client.connectToGame(undefined, this.mode);
+            await this.client.connectToGame(this.gameRoomId, this.mode);
             
             // Démarrer le rendu
             this.client.start();
@@ -578,20 +580,20 @@ export class ServerGame_solo {
     }
 
     restart(): void {
-        console.log("🔄 Restarting server-side game...");
+        //console.log("🔄 Restarting server-side game...");
         this.client.restart();
     }
 
     disconnect(): void {
         if (!this.isDisconnected) {
-            console.log("🔌 Disconnecting ServerGame_solo...");
+            //console.log("🔌 Disconnecting ServerGame_solo...");
             this.isDisconnected = true;
             this.client.disconnect();
         }
     }
     
     // Getters pour accéder aux propriétés du client
-    get currentGameId(): string | null {
+    get currentGameId(): string | undefined {
         return this.client.currentGameId;
     }
     

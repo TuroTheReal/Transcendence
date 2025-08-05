@@ -1,7 +1,5 @@
 import { i18n } from "../services/i18n.js";
 import { createLanguageSwitcher } from "../components/LanguageSwitcher.js";
-import { classes } from "../styles/retroStyles.js";
-import { createNeonContainer } from "../styles/neonTheme.js";
 
 export function createChatPage(): HTMLElement {
 	const page = document.createElement("div");
@@ -19,26 +17,26 @@ export function createChatPage(): HTMLElement {
 			</style>
 
 			<!-- Champ d'étoiles -->
-			<div class="${classes.starfield}"></div>
+			<div class="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 bg-[radial-gradient(2px_2px_at_20px_30px,rgb(157,78,221),transparent),radial-gradient(2px_2px_at_40px_70px,rgb(199,125,255),transparent),radial-gradient(1px_1px_at_90px_40px,rgb(157,78,221),transparent),radial-gradient(1px_1px_at_130px_80px,rgb(199,125,255),transparent),radial-gradient(2px_2px_at_160px_30px,rgb(157,78,221),transparent),radial-gradient(1px_1px_at_200px_90px,rgb(199,125,255),transparent),radial-gradient(2px_2px_at_240px_20px,rgb(157,78,221),transparent)] bg-[length:250px_150px] animate-pulse"></div>
 
 			<div class="absolute top-4 right-4 z-50" id="language-switcher-container"></div>
 
 			<!-- Main Chat Container -->
-			<div class="${classes.retroPanel} rounded-2xl p-8 max-w-7xl w-full h-[80vh] flex flex-col fade-in slide-up">
+			<div class="bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm rounded-2xl p-8 max-w-7xl w-full h-[80vh] flex flex-col fade-in slide-up">
 				<header class="w-full flex items-center gap-4 mb-6">
-					<button class="${classes.backButton}" data-route="/game">
+					<button class="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/50 text-white font-bold py-2 px-6 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-neon-purple hover:border-purple-300 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-purple-400/40 before:to-transparent before:transition-all before:duration-500 hover:before:left-full" data-route="/game">
 						← ${i18n.t("chat.back")}
 					</button>
-					<h2 class="${classes.retroTitle} text-3xl">
+					<h2 class="text-6xl font-black text-transparent bg-gradient-to-r from-purple-400 via-purple-300 to-purple-400 bg-clip-text text-center drop-shadow-neon-purple animate-pulse text-3xl">
 						💬 ${i18n.t("chat.title")}
 					</h2>
 				</header>
 
 				<main class="flex-1 flex gap-4 min-h-0">
 					<!-- Online Users Panel -->
-					<div class="w-1/4 ${classes.retroPanel} rounded-xl flex flex-col min-h-0">
+					<div class="w-1/4 bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm rounded-xl flex flex-col min-h-0">
 						<div class="p-4 border-b-2 border-purple-400/30">
-							<h3 class="${classes.neonText} font-bold text-lg">
+							<h3 class="text-purple-300 drop-shadow-[0_0_3px_rgb(187,134,252)] drop-shadow-[0_0_6px_rgb(187,134,252)] drop-shadow-[0_0_9px_rgb(187,134,252)] animate-pulse font-bold text-lg">
 								👥 ${i18n.t("chat.online_users")}
 							</h3>
 						</div>
@@ -51,9 +49,9 @@ export function createChatPage(): HTMLElement {
 					</div>
 
 					<!-- Conversations Panel -->
-					<div class="w-1/3 ${classes.retroPanel} rounded-xl flex flex-col min-h-0">
+					<div class="w-1/3 bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm rounded-xl flex flex-col min-h-0">
 						<div class="p-4 border-b-2 border-purple-400/30">
-							<h3 class="${classes.neonText} font-bold text-lg">
+							<h3 class="text-purple-300 drop-shadow-[0_0_3px_rgb(187,134,252)] drop-shadow-[0_0_6px_rgb(187,134,252)] drop-shadow-[0_0_9px_rgb(187,134,252)] animate-pulse font-bold text-lg">
 								💭 ${i18n.t("chat.conversations")}
 							</h3>
 						</div>
@@ -63,23 +61,23 @@ export function createChatPage(): HTMLElement {
 					</div>
 
 					<!-- Chat Area -->
-					<div class="flex-1 ${classes.retroPanel} rounded-xl flex flex-col min-h-0">
+					<div class="flex-1 bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm rounded-xl flex flex-col min-h-0">
 						<div class="p-4 border-b-2 border-purple-400/30" id="chat-header">
-							<h3 class="${classes.neonText} font-bold text-lg">
+							<h3 class="text-purple-300 drop-shadow-[0_0_3px_rgb(187,134,252)] drop-shadow-[0_0_6px_rgb(187,134,252)] drop-shadow-[0_0_9px_rgb(187,134,252)] animate-pulse font-bold text-lg">
 								💬 ${i18n.t("chat.select_conversation")}
 							</h3>
 						</div>
 						<div class="flex-1 p-4 overflow-y-auto" id="chat-messages">
 							<!-- Messages will appear here -->
 						</div>
-						<div class="${classes.retroPanel} border-t-2 border-purple-400/30 p-4 flex gap-2">
+						<div class="bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm border-t-2 border-purple-400/30 p-4 flex gap-2">
 							<input
 								type="text"
 								placeholder="${i18n.t("chat.type_message")}"
 								id="message-input"
-								class="${classes.tournamentInput} flex-1"
+								class="bg-gradient-to-br from-black to-purple-900/20 border-2 border-purple-400 text-purple-300 shadow-[0_0_10px_rgb(157,78,221,0.4),inset_0_0_10px_rgb(157,78,221,0.2)] focus:border-purple-300 focus:shadow-[0_0_20px_rgb(157,78,221),inset_0_0_20px_rgb(157,78,221,0.3)] focus:outline-none px-4 py-2 rounded-lg w-full text-center font-bold flex-1"
 							>
-							<button id="send-message" class="${classes.actionButton}">
+							<button id="send-message" class="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/50 text-purple-300 font-bold py-2 px-6 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-neon-purple hover:border-purple-300 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-purple-400/40 before:to-transparent before:transition-all before:duration-500 hover:before:left-full">
 								📤 ${i18n.t("chat.send")}
 							</button>
 						</div>
@@ -88,7 +86,13 @@ export function createChatPage(): HTMLElement {
 			</div>
 		`;
 
-		page.innerHTML = createNeonContainer(content);
+		page.innerHTML = `
+			<div class="min-h-screen bg-gray-900 text-white font-mono overflow-hidden">
+				<div class="min-h-screen flex flex-col items-center justify-center p-4 relative before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:bottom-0 before:bg-gradient-to-b before:from-transparent before:via-purple-400/10 before:to-transparent before:bg-[length:100%_4px] before:animate-pulse before:pointer-events-none">
+					${content}
+				</div>
+			</div>
+		`;
 
 		// Add language switcher
 		const languageSwitcherContainer = page.querySelector(
@@ -119,11 +123,11 @@ export function createChatPage(): HTMLElement {
 
 	if (!username) {
 		page.innerHTML = `
-				<div class="min-h-screen flex items-center justify-center p-4 scan-lines relative">
-					<div class="bg-gray-800 bg-opacity-50 backdrop-blur-sm rounded-2xl p-8 border border-red-400 border-opacity-30 neon-border max-w-md w-full text-center">
-						<h2 class="text-xl font-bold text-red-400 neon-text mb-4">${i18n.t("common.error")}</h2>
+				<div class="min-h-screen flex items-center justify-center p-4 relative before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:bottom-0 before:bg-gradient-to-b before:from-transparent before:via-purple-400/10 before:to-transparent before:bg-[length:100%_4px] before:animate-pulse before:pointer-events-none">
+					<div class="bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm rounded-2xl p-8 border border-red-400 border-opacity-30 max-w-md w-full text-center">
+						<h2 class="text-xl font-bold text-purple-300 drop-shadow-[0_0_3px_rgb(187,134,252)] drop-shadow-[0_0_6px_rgb(187,134,252)] drop-shadow-[0_0_9px_rgb(187,134,252)] animate-pulse mb-4">${i18n.t("common.error")}</h2>
 						<p class="text-gray-300">${i18n.t("chat.login_required")}</p>
-						<button class="bg-gradient-to-r from-red-400 from-opacity-30 to-orange-400 to-opacity-30 hover:from-red-400 hover:from-opacity-50 hover:to-orange-400 hover:to-opacity-50 text-white font-bold py-2 px-4 rounded-lg border border-red-400 border-opacity-50 transition-all duration-300 transform hover:scale-105 mt-4" data-route="/login">${i18n.t("chat.login_link")}</button>
+						<button class="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/50 text-white font-bold py-2 px-6 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-neon-purple hover:border-purple-300 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-purple-400/40 before:to-transparent before:transition-all before:duration-500 hover:before:left-full mt-4" data-route="/login">${i18n.t("chat.login_link")}</button>
 					</div>
 				</div>
 			`;
@@ -162,7 +166,6 @@ export function createChatPage(): HTMLElement {
 		Promise.race([userInfoPromise, timeoutPromise])
 			.then((userData) => {
 				if (userData && userData.id) {
-					console.log("✅ User info retrieved:", userData);
 					sessionStorage.setItem("userId", userData.id.toString());
 					initializeChat(page, userData);
 				} else {
@@ -172,11 +175,11 @@ export function createChatPage(): HTMLElement {
 			.catch((error) => {
 				console.error("❌ Failed to get user info:", error);
 				page.innerHTML = `
-					<div class="min-h-screen flex items-center justify-center p-4 scan-lines relative">
-						<div class="bg-gray-800 bg-opacity-50 backdrop-blur-sm rounded-2xl p-8 border border-red-400 border-opacity-30 neon-border max-w-md w-full text-center">
-							<h2 class="text-xl font-bold text-red-400 neon-text mb-4">${i18n.t("common.error")}</h2>
+					<div class="min-h-screen flex items-center justify-center p-4 relative before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:bottom-0 before:bg-gradient-to-b before:from-transparent before:via-purple-400/10 before:to-transparent before:bg-[length:100%_4px] before:animate-pulse before:pointer-events-none">
+						<div class="bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm rounded-2xl p-8 border border-red-400 border-opacity-30 max-w-md w-full text-center">
+							<h2 class="text-xl font-bold text-purple-300 drop-shadow-[0_0_3px_rgb(187,134,252)] drop-shadow-[0_0_6px_rgb(187,134,252)] drop-shadow-[0_0_9px_rgb(187,134,252)] animate-pulse mb-4">${i18n.t("common.error")}</h2>
 							<p class="text-gray-300">${i18n.t("chat.user_info_error")}</p>
-							<button class="bg-gradient-to-r from-red-400 from-opacity-30 to-orange-400 to-opacity-30 hover:from-red-400 hover:from-opacity-50 hover:to-orange-400 hover:to-opacity-50 text-white font-bold py-2 px-4 rounded-lg border border-red-400 border-opacity-50 transition-all duration-300 transform hover:scale-105 mt-4" data-route="/login">${i18n.t("chat.reconnect_link")}</button>
+							<button class="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/50 text-white font-bold py-2 px-6 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-neon-purple hover:border-purple-300 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-purple-400/40 before:to-transparent before:transition-all before:duration-500 hover:before:left-full mt-4" data-route="/login">${i18n.t("chat.reconnect_link")}</button>
 						</div>
 					</div>
 				`;
@@ -193,7 +196,6 @@ export function createChatPage(): HTMLElement {
 			});
 		}
 	});
-
 	return page;
 }
 
@@ -220,7 +222,6 @@ export async function getUserInfo() {
 		}
 
 		const userData = await response.json();
-		console.log("✅ User data from /api/me:", userData);
 		return userData;
 	} catch (error) {
 		console.error("❌ Error fetching user info:", error);
@@ -228,12 +229,11 @@ export async function getUserInfo() {
 	}
 }
 
-/**
- * Initialize chat functionality with user data
- */
 function initializeChat(page: HTMLElement, userData: any) {
-	// WebSocket connection
-	let ws: WebSocket | null = null;
+	// Use GlobalNotificationService for all WebSocket communication
+	// No separate WebSocket needed for ChatPage
+	let globalNotificationService: any = null;
+	let chatMessageHandler: any = null; // Store reference to handler for cleanup
 	let currentConversation: string | null = null;
 	const onlineUsersList = page.querySelector(
 		"#online-users-list"
@@ -256,134 +256,134 @@ function initializeChat(page: HTMLElement, userData: any) {
 	// Add these variables at the top of initializeChat function
 	let blockedUsers: Set<string> = new Set();
 	let usersWhoBlockedMe: Set<string> = new Set();
-	let pendingInvitations: Set<string> = new Set(); // Track pending invitations
+	// Pending invitations now managed by GlobalNotificationService
 
 	// Add this variable to store received messages
 	let receivedMessages: Map<string, any[]> = new Map();
 
-	function connectWebSocket() {
-		// Utiliser l'URL complète du serveur backend
-		ws = new WebSocket(
-			`wss://localhost:3002/ws/chat?username=${encodeURIComponent(userData.username)}&userId=${userData.id}`
-		);
+	async function initializeGlobalService() {
+		// Import the existing GlobalNotificationService instance
+		const { default: service } = await import("../services/GlobalNotificationService.js");
+		globalNotificationService = service;
 
-		ws.onopen = () => {
-			console.log("🔗 WebSocket connected");
-			loadConversations();
-			// Les utilisateurs en ligne sont maintenant envoyés automatiquement par le serveur
-			// avec un petit délai pour éviter les race conditions
-		};
-
-		ws.onmessage = (event) => {
-			try {
-				const data = JSON.parse(event.data);
-				console.log("📨 Received:", data);
-
-				switch (data.type) {
-					case "connection_established":
-						console.log("✅ Connected to chat server");
-						break;
-					case "conversations":
-						displayConversations(data.conversations);
-						break;
-					case "messages":
-						displayMessages(data.messages);
-						break;
-					case "message_sent":
-						// Handle message sent confirmation (optional)
-						console.log("✅ Message sent successfully");
-						break;
-					case "direct_message":
-						handleNewMessage(data);
-						break;
-					case "user_profile":
-						displayUserProfile(data.profile);
-						break;
-					case "online_users":
-						console.log("👥 Online users:", data.users);
+		globalNotificationService.clearChatHandlers();
+		
+		// Register ChatPage-specific message handler
+		chatMessageHandler = (data: any) => {
+			switch (data.type) {
+				case "connection_established":
+					console.log("✅ Connected to chat server");
+					loadConversations();
+					setTimeout(() => requestOnlineUsers(), 100);
+					return true;
+				case "conversations":
+					displayConversations(data.conversations);
+					return true;
+				case "messages":
+					displayMessages(data.messages);
+					return true;
+				case "message_sent":
+					return true;
+				case "direct_message":
+					handleNewMessage(data);
+					return true;
+				case "user_profile":
+					displayUserProfile(data.profile);
+					return true;
+				case "online_users":
+					if (onlineUsersList && onlineUsersList.parentNode) {
 						displayOnlineUsers(data.users);
-						break;
-					case "user_offline":
-						console.log("👤 User offline:", data.username);
-						removeUserFromOnlineList(data.username);
-						break;
-					case "user_online":
-						console.log("👤 User online:", data.user);
-						addUserToOnlineList(data.user);
-						break;
-					case "error":
-						showError(data.message);
-						break;
-					case "user_blocked":
-						blockedUsers.add(data.username);
-						showBlockedMessage(data.username, true);
-						break;
-					case "user_unblocked":
-						blockedUsers.delete(data.username);
-						break;
-					case "user_blocked_you":
-						usersWhoBlockedMe.add(data.username);
-						showBlockedMessage(data.username, false);
-						break;
-					case "user_unblocked_you":
-						usersWhoBlockedMe.delete(data.username);
-						break;
-					case "game_invite_received":
-						handleGameInviteReceived(data);
-						break;
-					case "game_invite_sent":
-						handleGameInviteSent(data);
-						break;
-					case "game_invite_accepted":
-						handleGameInviteAccepted(data);
-						break;
-					case "game_invite_declined":
-						handleGameInviteDeclined(data);
-						break;
-					case "game_invite_response":
-						handleGameInviteResponse(data);
-						break;
-					case "tournament_notification":
-						handleTournamentNotification(data);
-						break;
-					default:
-						console.log("📨 Unknown message type:", data.type);
-				}
-			} catch (error) {
-				console.error("❌ Error parsing message:", error);
+					} else {
+						console.warn("⚠️ onlineUsersList element not found in DOM");
+					}
+					return true;
+				case "user_offline":
+					removeUserFromOnlineList(data.username);
+					return true;
+				case "user_online":
+					addUserToOnlineList(data.user);
+					return true;
+				case "error":
+					showError(data.message);
+					return true;
+				case "user_blocked":
+					blockedUsers.add(data.username);
+					showBlockedMessage(data.username, true);
+					if (currentConversation === data.username) {
+						updateBlockButton(data.username);
+						if (globalNotificationService && globalNotificationService.isReady()) {
+							globalNotificationService.sendMessage({
+								type: "get_messages",
+								otherUsername: data.username,
+							});
+						}
+					}
+					return true;
+				case "user_unblocked":
+					blockedUsers.delete(data.username);
+					showBlockedMessage(data.username, true, true);
+					if (currentConversation === data.username) {
+						updateBlockButton(data.username);
+						if (globalNotificationService && globalNotificationService.isReady()) {
+							globalNotificationService.sendMessage({
+								type: "get_messages",
+								otherUsername: data.username,
+							});
+						}
+					}
+					return true;
+				case "user_blocked_you":
+					usersWhoBlockedMe.add(data.username);
+					showBlockedMessage(data.username, false);
+					return true;
+				case "user_unblocked_you":
+					usersWhoBlockedMe.delete(data.username);
+					showBlockedMessage(data.username, false, true);
+					if (currentConversation === data.username) {
+						if (globalNotificationService && globalNotificationService.isReady()) {
+							globalNotificationService.sendMessage({
+								type: "get_messages",
+								otherUsername: data.username,
+							});
+						}
+					}
+					loadConversations();
+					return true;
+				default:
+					return false;
 			}
 		};
-
-		ws.onclose = () => {
-			console.log("🔌 WebSocket disconnected");
-			// Afficher un message à l'utilisateur
+		
+		globalNotificationService.addMessageHandler(chatMessageHandler);
+		
+		
+		if (globalNotificationService.isReady()) {
+			loadConversations();
+			requestOnlineUsers();
+		} else {
+			globalNotificationService.forceReconnect();
+			
 			onlineUsersList.innerHTML = `
-				<div class="p-4 text-red-400 text-center">
-					<div class="mb-2 text-lg font-medium drop-shadow-[0_0_3px_rgb(252,165,165)]">${i18n.t("chat.connection_lost")}</div>
-					<button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-[0_0_8px_rgb(239,68,68)]" onclick="location.reload()">${i18n.t("chat.reconnect")}</button>
+				<div class="p-4 text-blue-400 text-center">
+					<div class="animate-spin inline-block w-6 h-6 border-2 border-blue-400 border-t-blue-300 rounded-full shadow-[0_0_8px_rgb(59,130,246)]"></div>
+					<div class="mt-3 text-sm font-medium drop-shadow-[0_0_3px_rgb(147,197,253)]">Reconnecting...</div>
 				</div>
 			`;
-		};
+		}
 
-		ws.onerror = (error) => {
-			console.error("❌ WebSocket error:", error);
-			onlineUsersList.innerHTML = `
-				<div class="p-4 text-red-400 text-center">
-					<div class="text-lg font-medium drop-shadow-[0_0_3px_rgb(252,165,165)]">${i18n.t("chat.connection_error")}</div>
-					<div class="text-sm text-red-300 mt-1">${i18n.t("chat.check_internet")}</div>
-				</div>
-			`;
-		};
 	}
 
 	function requestOnlineUsers() {
-		// Debounce les requêtes multiples
+		if (!onlineUsersList || !onlineUsersList.parentNode) {
+			console.warn("⚠️ onlineUsersList element not found, cannot request users");
+			return;
+		}
+		
 		if (onlineUsersRequestTimeout) {
 			clearTimeout(onlineUsersRequestTimeout);
 		}
 
 		onlineUsersRequestTimeout = setTimeout(() => {
-			// Afficher un indicateur de chargement seulement si la liste est vide
 			if (
 				onlineUsersList.children.length === 0 ||
 				onlineUsersList.querySelector(".text-gray-500")
@@ -396,18 +396,13 @@ function initializeChat(page: HTMLElement, userData: any) {
 				`;
 			}
 
-			if (ws && ws.readyState === WebSocket.OPEN) {
-				console.log("🔧 Sending get_online_users request");
-				ws.send(
-					JSON.stringify({
-						type: "get_online_users",
-					})
-				);
+			if (globalNotificationService && globalNotificationService.isReady()) {
+				globalNotificationService.sendMessage({
+					type: "get_online_users",
+				});
 
-				// Réduire le timeout à 3 secondes au lieu de 5
 				setTimeout(() => {
 					if (onlineUsersList.querySelector(".animate-spin")) {
-						console.log("🔧 Timeout reached for get_online_users");
 						onlineUsersList.innerHTML = `
 							<div class="p-4 text-red-400 text-center">
 								<div class="text-lg font-medium drop-shadow-[0_0_3px_rgb(252,165,165)]">${i18n.t("chat.timeout_users")}</div>
@@ -415,22 +410,35 @@ function initializeChat(page: HTMLElement, userData: any) {
 							</div>
 						`;
 					}
-				}, 3000); // Timeout après 3 secondes
+				}, 10000);
 			} else {
-				console.log("🔧 WebSocket not connected");
-				// Si WebSocket n'est pas connecté, afficher un message d'erreur immédiatement
+				console.log("🔧 GlobalNotificationService not ready, forcing reconnection...");
+				globalNotificationService.forceReconnect();
+				
 				onlineUsersList.innerHTML = `
-					<div class="p-4 text-red-400 text-center">
-						<div class="text-lg font-medium drop-shadow-[0_0_3px_rgb(252,165,165)]">${i18n.t("chat.connection_error")}</div>
-						<button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-[0_0_8px_rgb(239,68,68)] mt-3" onclick="location.reload()">${i18n.t("chat.reconnect")}</button>
+					<div class="p-4 text-orange-400 text-center">
+						<div class="text-lg font-medium drop-shadow-[0_0_3px_rgb(251,146,60)]">Reconnecting...</div>
+						<div class="text-sm text-orange-300 mt-1">Please wait a moment</div>
 					</div>
 				`;
+				
+				setTimeout(() => {
+					if (globalNotificationService.isReady()) {
+						requestOnlineUsers();
+					} else {
+						onlineUsersList.innerHTML = `
+							<div class="p-4 text-red-400 text-center">
+								<div class="text-lg font-medium drop-shadow-[0_0_3px_rgb(252,165,165)]">Connection failed</div>
+								<button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-[0_0_8px_rgb(239,68,68)] mt-3" onclick="location.reload()">Reload Page</button>
+							</div>
+						`;
+					}
+				}, 3000);
 			}
-		}, 100); // Debounce de 100ms
+		}, 100);
 	}
 
 	function displayOnlineUsers(users: any[]) {
-		// Solution simple : remplacer complètement la liste
 		onlineUsersList.innerHTML = "";
 
 		if (users.length === 0) {
@@ -443,11 +451,9 @@ function initializeChat(page: HTMLElement, userData: any) {
 			return;
 		}
 
-		// Créer un fragment pour optimiser les performances DOM
 		const fragment = document.createDocumentFragment();
 
 		users.forEach((user) => {
-			// Skip current user
 			if (user.username === userData.username) {
 				return;
 			}
@@ -482,19 +488,16 @@ function initializeChat(page: HTMLElement, userData: any) {
 	}
 
 	function addUserToOnlineList(user: any) {
-		// Skip current user
 		if (user.username === userData.username) {
 			return;
 		}
 
-		console.log(`👤 Adding user ${user.username} to online list`);
 
-		// Check if user already exists in the list
 		const existingUser = onlineUsersList.querySelector(
 			`[data-username="${user.username}"]`
 		);
 		if (existingUser) {
-			return; // User already in list
+			return;
 		}
 
 		const userDiv = document.createElement("div");
@@ -520,7 +523,6 @@ function initializeChat(page: HTMLElement, userData: any) {
 			startConversationWithUser(user.username);
 		});
 
-		// Remove "Aucun utilisateur en ligne" message if it exists
 		const noUsersMessage =
 			onlineUsersList.querySelector(".text-purple-300");
 		if (
@@ -530,7 +532,6 @@ function initializeChat(page: HTMLElement, userData: any) {
 			noUsersMessage.remove();
 		}
 
-		// Add the user to the list
 		onlineUsersList.appendChild(userDiv);
 	}
 
@@ -544,20 +545,16 @@ function initializeChat(page: HTMLElement, userData: any) {
 	}
 
 	function startConversationWithUser(username: string) {
-		// Select the conversation with this user
 		selectConversation(username);
 
-		// Also update the conversations list to show this conversation
 		loadConversations();
 	}
 
 	function loadConversations() {
-		if (ws && ws.readyState === WebSocket.OPEN) {
-			ws.send(
-				JSON.stringify({
-					type: "get_conversations",
-				})
-			);
+		if (globalNotificationService && globalNotificationService.isReady()) {
+			globalNotificationService.sendMessage({
+				type: "get_conversations",
+			});
 		}
 	}
 
@@ -609,17 +606,20 @@ function initializeChat(page: HTMLElement, userData: any) {
 	function selectConversation(username: string) {
 		currentConversation = username;
 
-		// Clear notification badge immediately for this conversation
 		clearNotificationBadge(username);
 
-		// Check if there's a pending invitation for this user
-		const hasPendingInvite = pendingInvitations.has(username);
+			const hasPendingInvite = false;
 		const inviteButtonClass = hasPendingInvite
 			? "text-gray-400 text-sm cursor-not-allowed opacity-50"
 			: "text-green-400 text-sm hover:text-green-300 transition-colors duration-300 drop-shadow-[0_0_3px_rgb(34,197,94)]";
 		const inviteButtonText = hasPendingInvite ? "🎮 Invitation Sent" : "🎮 Invite to Game";
 
-		// Update header
+		const isUserBlocked = blockedUsers.has(username);
+		const blockButtonText = isUserBlocked ? `🔓 ${i18n.t("chat.unblock_user")}` : `🚫 ${i18n.t("chat.block_user")}`;
+		const blockButtonClass = isUserBlocked 
+			? "text-green-400 text-sm hover:text-green-300 transition-colors duration-300 drop-shadow-[0_0_3px_rgb(34,197,94)]"
+			: "text-red-400 text-sm hover:text-red-300 transition-colors duration-300 drop-shadow-[0_0_3px_rgb(252,165,165)]";
+
 		chatHeader.innerHTML = `
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-3">
@@ -632,14 +632,13 @@ function initializeChat(page: HTMLElement, userData: any) {
 					<button class="${inviteButtonClass}" id="invite-game-btn" ${hasPendingInvite ? 'disabled' : ''}>
 						${inviteButtonText}
 					</button>
-					<button class="text-red-400 text-sm hover:text-red-300 transition-colors duration-300 drop-shadow-[0_0_3px_rgb(252,165,165)]" id="block-user-btn">
-						🚫 ${i18n.t("chat.block_user")}
+					<button class="${blockButtonClass}" id="block-user-btn">
+						${blockButtonText}
 					</button>
 				</div>
 			</div>
 		`;
 
-		// Add event listeners
 		const viewProfileBtn = chatHeader.querySelector(
 			"#view-profile-btn"
 		) as HTMLButtonElement;
@@ -651,7 +650,6 @@ function initializeChat(page: HTMLElement, userData: any) {
 		) as HTMLButtonElement;
 
 		viewProfileBtn.addEventListener("click", () => {
-			// Navigate directly to user profile page
 			import("../router/router.js").then(({ router }) => {
 				router.navigate(`/profile/${username}`);
 			});
@@ -665,38 +663,30 @@ function initializeChat(page: HTMLElement, userData: any) {
 			blockUser(username);
 		});
 
-		// Load messages
-		if (ws && ws.readyState === WebSocket.OPEN) {
-			ws.send(
-				JSON.stringify({
-					type: "get_messages",
-					otherUsername: username,
-				})
-			);
+		if (globalNotificationService && globalNotificationService.isReady()) {
+			globalNotificationService.sendMessage({
+				type: "get_messages",
+				otherUsername: username,
+			});
 		}
 	}
 
 	function clearNotificationBadge(username: string) {
-		// Find the specific conversation div using data-username attribute
 		const conversationElement = conversationsList.querySelector(
 			`[data-username="${username}"]`
 		);
 		if (conversationElement) {
-			// Remove the blue background indicating unread messages
 			conversationElement.classList.remove("bg-blue-50");
-			// Remove the red notification badge
 			const badge = conversationElement.querySelector(".bg-red-500");
 			if (badge) {
 				badge.remove();
 			}
 		}
 
-		// Clear any cached received messages for this conversation to prevent duplication
 		if (receivedMessages.has(username)) {
 			receivedMessages.set(username, []);
 		}
 
-		// Reload conversations after a short delay to allow server to mark messages as read
 		setTimeout(() => {
 			loadConversations();
 		}, 500);
@@ -715,7 +705,6 @@ function initializeChat(page: HTMLElement, userData: any) {
 			return;
 		}
 
-		// Check if current conversation is blocked
 		const isBlocked = blockedUsers.has(currentConversation!);
 		const isBlockedByMe = usersWhoBlockedMe.has(currentConversation!);
 
@@ -749,7 +738,6 @@ function initializeChat(page: HTMLElement, userData: any) {
 			return;
 		}
 
-		// Combine database messages with received messages
 		const allMessages = [...messages];
 		if (currentConversation && receivedMessages.has(currentConversation)) {
 			const receivedMsgs = receivedMessages.get(currentConversation)!;
@@ -838,8 +826,8 @@ function initializeChat(page: HTMLElement, userData: any) {
 		const message = messageInput.value.trim();
 		if (
 			message &&
-			ws &&
-			ws.readyState === WebSocket.OPEN &&
+			globalNotificationService &&
+			globalNotificationService.isReady() &&
 			currentConversation
 		) {
 			// Check if user is blocked
@@ -853,25 +841,21 @@ function initializeChat(page: HTMLElement, userData: any) {
 				return;
 			}
 
-			ws.send(
-				JSON.stringify({
-					type: "direct_message",
-					receiverUsername: currentConversation,
-					content: message,
-				})
-			);
+			globalNotificationService.sendMessage({
+				type: "direct_message",
+				receiverUsername: currentConversation,
+				content: message,
+			});
 			messageInput.value = "";
 		}
 	}
 
 	function showUserProfile(username: string) {
-		if (ws && ws.readyState === WebSocket.OPEN) {
-			ws.send(
-				JSON.stringify({
-					type: "get_user_profile",
-					username: username,
-				})
-			);
+		if (globalNotificationService && globalNotificationService.isReady()) {
+			globalNotificationService.sendMessage({
+				type: "get_user_profile",
+				username: username,
+			});
 		}
 	}
 
@@ -886,14 +870,18 @@ function initializeChat(page: HTMLElement, userData: any) {
 	}
 
 	function blockUser(username: string) {
-		if (confirm(`${i18n.t("chat.confirm_block")} ${username} ?`)) {
-			if (ws && ws.readyState === WebSocket.OPEN) {
-				ws.send(
-					JSON.stringify({
-						type: "block_user",
-						usernameToBlock: username,
-					})
-				);
+		const isUserBlocked = blockedUsers.has(username);
+		const action = isUserBlocked ? "unblock" : "block";
+		const confirmMessage = isUserBlocked 
+			? `${i18n.t("chat.confirm_unblock")} ${username} ?`
+			: `${i18n.t("chat.confirm_block")} ${username} ?`;
+
+		if (confirm(confirmMessage)) {
+			if (globalNotificationService && globalNotificationService.isReady()) {
+				globalNotificationService.sendMessage({
+					type: isUserBlocked ? "unblock_user" : "block_user",
+					usernameToBlock: username,
+				});
 			}
 		}
 	}
@@ -915,116 +903,50 @@ function initializeChat(page: HTMLElement, userData: any) {
 		}, 5000);
 	}
 
-	function showBlockedMessage(username: string, isBlockedByMe: boolean) {
-		const message = isBlockedByMe
-			? `${i18n.t("chat.blocked_success")} ${username}. ${i18n.t("chat.blocked_success_message")}`
-			: `${username} ${i18n.t("chat.blocked_by_message")}`;
-
-		showError(message);
-	}
-
-	function sendGameInvite(username: string) {
-		if (!ws || ws.readyState !== WebSocket.OPEN) {
-			showError("Not connected to chat server");
-			return;
-		}
-
-		// Check if there's already a pending invitation
-		if (pendingInvitations.has(username)) {
-			showError("You already have a pending invitation to this user");
-			return;
-		}
-
-		ws.send(JSON.stringify({
-			type: "send_game_invite",
-			receiverUsername: username
-		}));
-	}
-
-	function handleGameInviteReceived(data: any) {
-		showGameInviteNotification(data.senderUsername, data.inviteId);
-	}
-
-	function handleGameInviteSent(data: any) {
-		// Add to pending invitations
-		pendingInvitations.add(data.receiverUsername);
-		showSuccessMessage(`Game invitation sent to ${data.receiverUsername}`);
-
-		// Update the UI if we're currently chatting with this user
-		if (currentConversation === data.receiverUsername) {
-			selectConversation(data.receiverUsername);
-		}
-	}
-
-	function handleGameInviteAccepted(data: any) {
-		// Remove from pending invitations
-		pendingInvitations.delete(data.receiverUsername);
-		showSuccessMessage(`${data.receiverUsername} accepted your game invitation! ${data.message || ''}`);
-
-		// Update the UI if we're currently chatting with this user
-		if (currentConversation === data.receiverUsername) {
-			selectConversation(data.receiverUsername);
-		}
-	}
-
-	function handleGameInviteDeclined(data: any) {
-		// Remove from pending invitations
-		pendingInvitations.delete(data.receiverUsername);
-		showError(`${data.receiverUsername} declined your game invitation`);
-
-		// Update the UI if we're currently chatting with this user
-		if (currentConversation === data.receiverUsername) {
-			selectConversation(data.receiverUsername);
-		}
-	}
-
-	function handleGameInviteResponse(data: any) {
-		const message = data.status === "accepted"
-			? `Game invitation ${data.status}! ${data.message || ''}`
-			: `Game invitation ${data.status}`;
-
-		if (data.status === "accepted") {
+	function showBlockedMessage(username: string, isBlockedByMe: boolean, isUnblocked: boolean = false) {
+		let message: string;
+		
+		if (isUnblocked) {
+			message = `${i18n.t("chat.unblocked_success")} ${username}. ${i18n.t("chat.unblocked_success_message")}`;
 			showSuccessMessage(message);
 		} else {
+			message = isBlockedByMe
+				? `${i18n.t("chat.blocked_success")} ${username}. ${i18n.t("chat.blocked_success_message")}`
+				: `${username} ${i18n.t("chat.blocked_by_message")}`;
 			showError(message);
 		}
 	}
 
-	function handleTournamentNotification(data: any) {
-		showTournamentNotification(data.message);
+	function updateBlockButton(username: string) {
+		const blockUserBtn = chatHeader.querySelector("#block-user-btn") as HTMLButtonElement;
+		if (blockUserBtn) {
+			const isUserBlocked = blockedUsers.has(username);
+			const blockButtonText = isUserBlocked ? `🔓 ${i18n.t("chat.unblock_user")}` : `🚫 ${i18n.t("chat.block_user")}`;
+			const blockButtonClass = isUserBlocked 
+				? "text-green-400 text-sm hover:text-green-300 transition-colors duration-300 drop-shadow-[0_0_3px_rgb(34,197,94)]"
+				: "text-red-400 text-sm hover:text-red-300 transition-colors duration-300 drop-shadow-[0_0_3px_rgb(252,165,165)]";
+			
+			blockUserBtn.className = blockButtonClass;
+			blockUserBtn.innerHTML = blockButtonText;
+		}
 	}
 
-	function showGameInviteNotification(senderUsername: string, inviteId: number) {
-		const notificationDiv = document.createElement("div");
-		notificationDiv.className = "fixed top-4 right-4 bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-4 rounded-lg shadow-[0_0_15px_rgb(34,197,94)] border border-green-400/50 backdrop-blur-sm z-50 max-w-sm";
-		notificationDiv.innerHTML = `
-			<div class="flex flex-col gap-3">
-				<div class="flex items-center gap-3">
-					<div class="text-green-200">🎮</div>
-					<div>
-						<div class="font-medium">Game Invitation</div>
-						<div class="text-sm text-green-200">${senderUsername} wants to play Pong!</div>
-					</div>
-				</div>
-				<div class="flex gap-2">
-					<button class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors" onclick="acceptGameInvite(${inviteId})">
-						Accept
-					</button>
-					<button class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors" onclick="declineGameInvite(${inviteId})">
-						Decline
-					</button>
-				</div>
-			</div>
-		`;
-		document.body.appendChild(notificationDiv);
-
-		// Auto-remove after 30 seconds
-		setTimeout(() => {
-			if (notificationDiv.parentNode) {
-				notificationDiv.remove();
+	function sendGameInvite(username: string) {
+		// Import and use GlobalNotificationService for game invites
+		import("../services/GlobalNotificationService.js").then(({ default: globalNotificationService }) => {
+			if (!globalNotificationService.isReady()) {
+				showError("Not connected to notification service");
+				return;
 			}
-		}, 30000);
+
+			// Pending invitation check now handled by backend
+
+			// Use GlobalNotificationService WebSocket instead of ChatPage WebSocket
+			globalNotificationService.sendGameInvite(username);
+		});
 	}
+
+	// Game invite handlers removed - now handled by GlobalNotificationService
 
 	function showSuccessMessage(message: string) {
 		const successDiv = document.createElement("div");
@@ -1042,53 +964,7 @@ function initializeChat(page: HTMLElement, userData: any) {
 		}, 5000);
 	}
 
-	function showTournamentNotification(message: string) {
-		const notificationDiv = document.createElement("div");
-		notificationDiv.className = "fixed top-4 left-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-4 rounded-lg shadow-[0_0_15px_rgb(147,51,234)] border border-purple-400/50 backdrop-blur-sm z-50 max-w-sm";
-		notificationDiv.innerHTML = `
-			<div class="flex items-center gap-3">
-				<div class="text-purple-200">🏆</div>
-				<div>
-					<div class="font-medium">Tournament Notification</div>
-					<div class="text-sm text-purple-200">${message}</div>
-				</div>
-			</div>
-		`;
-		document.body.appendChild(notificationDiv);
-
-		setTimeout(() => {
-			notificationDiv.remove();
-		}, 8000);
-	}
-
-	// Make functions globally available for onclick handlers
-	(window as any).acceptGameInvite = (inviteId: number) => {
-		if (ws && ws.readyState === WebSocket.OPEN) {
-			ws.send(JSON.stringify({
-				type: "accept_game_invite",
-				inviteId: inviteId
-			}));
-		}
-		// Remove the notification
-		const notification = document.querySelector('.fixed.top-4.right-4');
-		if (notification) {
-			notification.remove();
-		}
-	};
-
-	(window as any).declineGameInvite = (inviteId: number) => {
-		if (ws && ws.readyState === WebSocket.OPEN) {
-			ws.send(JSON.stringify({
-				type: "decline_game_invite",
-				inviteId: inviteId
-			}));
-		}
-		// Remove the notification
-		const notification = document.querySelector('.fixed.top-4.right-4');
-		if (notification) {
-			notification.remove();
-		}
-	};
+	// Game invite global functions removed - now handled by GlobalNotificationService
 
 	// Event listeners
 	sendButton.addEventListener("click", sendMessage);
@@ -1098,19 +974,14 @@ function initializeChat(page: HTMLElement, userData: any) {
 		}
 	});
 
-	// Connect to WebSocket when page loads
-	connectWebSocket();
+	// Initialize GlobalNotificationService when page loads
+	initializeGlobalService();
 	addRefreshButton();
 }
 
 function refreshOnlineUsersList() {
-	if (ws && ws.readyState === WebSocket.OPEN) {
-		ws.send(
-			JSON.stringify({
-				type: "get_online_users",
-			})
-		);
-	}
+	// This function will be updated to use globalNotificationService when available
+	// For now, it's called from addRefreshButton but needs to be accessible globally
 }
 
 // Ajouter un bouton de rafraîchissement dans l'interface

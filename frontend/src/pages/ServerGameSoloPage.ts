@@ -1,5 +1,6 @@
-import { Page } from "../router/router.js";
+import type { Page } from "../router/router.js";
 import { ServerGame_solo } from "../components/game/ServerPongGame.js";
+import { i18n } from "../services/i18n.js";
 
 export function createServerGameSoloPage(): HTMLElement {
 	const serverGameSoloPage = new ServerGameSoloPage();
@@ -18,246 +19,95 @@ export class ServerGameSoloPage implements Page {
 	private currentGame: ServerGame_solo | null = null;
 	private static isInstanceActive: boolean = false;
 	private navigationListener: ((e: Event) => void) | null = null;
-	private restartListener: (() => void) | null = null;
+	// private restartListener: (() => void) | null = null;
 
 	render(): string {
 		return `
-            <style>
-                /* Styles rétro gaming noir et violet - identiques au jeu normal */
-                @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+		<style>
+			/* Import de la police Orbitron pour le thème rétro */
+			@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
-                * {
-                    font-family: 'Orbitron', monospace;
-                }
+			* {
+				font-family: 'Orbitron', monospace;
+			}
+		</style>
 
-                .neon-text {
-                    color: #bb86fc;
-                    text-shadow:
-                        0 0 3px #bb86fc,
-                        0 0 6px #bb86fc,
-                        0 0 9px #bb86fc;
-                    animation: neonFlicker 2s infinite alternate;
-                }
+		<!-- Conteneur principal avec effet scan -->
+		<div class="min-h-screen bg-gray-900 text-white font-mono overflow-hidden relative before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:bottom-0 before:bg-gradient-to-b before:from-transparent before:via-purple-400/10 before:to-transparent before:bg-[length:100%_4px] before:animate-pulse before:pointer-events-none">
+			<div class="min-h-screen flex flex-col items-center justify-center p-4">
 
-                @keyframes neonFlicker {
-                    0%, 100% {
-                        text-shadow:
-                            0 0 5px #9d4edd,
-                            0 0 10px #9d4edd,
-                            0 0 15px #9d4edd,
-                            0 0 20px #9d4edd,
-                            0 0 35px #9d4edd;
-                    }
-                    50% {
-                        text-shadow:
-                            0 0 2px #9d4edd,
-                            0 0 5px #9d4edd,
-                            0 0 8px #9d4edd,
-                            0 0 12px #9d4edd,
-                            0 0 25px #9d4edd;
-                    }
-                }
+				<!-- Titre principal avec effet néon -->
+				<h1 class="text-6xl font-black text-transparent bg-gradient-to-r from-purple-400 via-purple-300 to-purple-400 bg-clip-text text-center drop-shadow-neon-purple animate-pulse mb-12">
+					🏓 RETRO PONG SERVER
+				</h1>
 
-                .retro-button {
-                    background: linear-gradient(135deg, #1a0d1a 0%, #0a0a0a 50%, #1a0d1a 100%);
-                    border: 2px solid #9d4edd;
-                    box-shadow:
-                        0 0 10px #9d4edd40,
-                        inset 0 0 10px #9d4edd20;
-                    transition: all 0.3s ease;
-                    position: relative;
-                    overflow: hidden;
-                }
+				<!-- Zone de jeu -->
+				<div id="game" class="w-full max-w-6xl">
+					<!-- Bouton retour -->
+					<button id="backToMenuBtn" class="mb-6 bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/50 text-white font-bold py-2 px-6 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-neon-purple hover:border-purple-300 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-purple-400/40 before:to-transparent before:transition-all before:duration-500 hover:before:left-full" data-route="/server-game">
+						${i18n.t('chat.back')}
+					</button>
 
-                .retro-button::before {
-                    content: '';
-                    position: absolute;
-                    top: 0;
-                    left: -100%;
-                    width: 100%;
-                    height: 100%;
-                    background: linear-gradient(90deg, transparent, #9d4edd40, transparent);
-                    transition: left 0.5s;
-                }
+					<!-- Statut de connexion -->
+					<div class="bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm rounded-xl p-4 mb-6">
+						<div class="text-center">
+							<p id="connectionStatus" class="text-purple-300 drop-shadow-[0_0_3px_rgb(187,134,252)] drop-shadow-[0_0_6px_rgb(187,134,252)] drop-shadow-[0_0_9px_rgb(187,134,252)] animate-pulse">🟡 Initialisation...</p>
+							<p id="gameId" class="text-purple-300 text-sm mt-2">ID: -</p>
+						</div>
+					</div>
 
-                .retro-button:hover {
-                    border-color: #c77dff;
-                    box-shadow:
-                        0 0 20px #9d4edd,
-                        inset 0 0 20px #9d4edd30;
-                    transform: scale(1.05);
-                }
+					<!-- Tableau de score -->
+					<div id="scoreboard" class="bg-gradient-to-br from-black via-purple-900/20 to-black border-2 border-purple-400 shadow-neon-purple-lg rounded-2xl p-6 mb-6">
+						<div class="grid grid-cols-2 gap-8 text-center">
+							<div class="bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm rounded-xl p-4">
+								<p id="scoreP1" class="text-2xl font-bold text-purple-300">
+									${i18n.t('game.player_1')} : 0
+								</p>
+							</div>
+							<div class="bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm rounded-xl p-4">
+								<p id="scoreP2" class="text-2xl font-bold text-purple-300">
+									IA : 0
+								</p>
+							</div>
+						</div>
+					</div>
 
-                .retro-button:hover::before {
-                    left: 100%;
-                }
+					<!-- Canvas avec cadre futuriste -->
+					<div class="relative bg-black/95 border-4 border-purple-400 shadow-[0_0_30px_rgb(157,78,221,0.8),inset_0_0_30px_rgb(157,78,221,0.4)] rounded-2xl mx-auto" style="width: 800px; height: 600px;">
+						<canvas id="gameCanvas" width="800" height="600" class="rounded-xl bg-black w-full h-full"></canvas>
+					</div>
 
-                .starfield {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    pointer-events: none;
-                    z-index: -1;
-                    background: radial-gradient(2px 2px at 20px 30px, #9d4edd, transparent),
-                                radial-gradient(2px 2px at 40px 70px, #c77dff, transparent),
-                                radial-gradient(1px 1px at 90px 40px, #9d4edd, transparent),
-                                radial-gradient(1px 1px at 130px 80px, #c77dff, transparent),
-                                radial-gradient(2px 2px at 160px 30px, #9d4edd, transparent),
-                                radial-gradient(1px 1px at 200px 90px, #c77dff, transparent),
-                                radial-gradient(2px 2px at 240px 20px, #9d4edd, transparent);
-                    background-size: 250px 150px;
-                    animation: twinkle 4s ease-in-out infinite alternate;
-                }
+					<!-- Compte à rebours -->
+					<div id="countdowndisplay" class="text-6xl font-bold text-purple-300 drop-shadow-[0_0_3px_rgb(187,134,252)] drop-shadow-[0_0_6px_rgb(187,134,252)] drop-shadow-[0_0_9px_rgb(187,134,252)] animate-pulse mt-8 text-center"></div>
 
-                @keyframes twinkle {
-                    0% { opacity: 0.5; }
-                    100% { opacity: 1; }
-                }
+					<!-- Message de fin de partie -->
+					<div id="endMessage" class="text-3xl font-bold text-purple-300 drop-shadow-[0_0_3px_rgb(187,134,252)] drop-shadow-[0_0_6px_rgb(187,134,252)] drop-shadow-[0_0_9px_rgb(187,134,252)] animate-pulse mt-8 text-center"></div>
 
-                .retro-panel {
-                    background: #050505;
-                    border: 2px solid #9d4edd;
-                    box-shadow:
-                        0 0 15px #9d4edd40,
-                        inset 0 0 15px #9d4edd20;
-                    backdrop-filter: blur(5px);
-                }
-
-                .scan-lines::before {
-                    content: '';
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: linear-gradient(
-                        transparent 0%,
-                        #9d4edd10 50%,
-                        transparent 100%
-                    );
-                    background-size: 100% 4px;
-                    animation: scan 0.1s linear infinite;
-                    pointer-events: none;
-                }
-
-                @keyframes scan {
-                    0% { background-position: 0 0; }
-                    100% { background-position: 0 4px; }
-                }
-
-                .scoreboard-panel {
-                    background: linear-gradient(135deg, #0a0a0a 0%, #1a0d1a 50%, #0a0a0a 100%);
-                    border: 2px solid #9d4edd;
-                    box-shadow:
-                        0 0 20px #9d4edd60,
-                        inset 0 0 20px #9d4edd30;
-                }
-
-                .game-canvas-frame {
-                    background: #050505;
-                    border: 3px solid #9d4edd;
-                    box-shadow:
-                        0 0 30px #9d4edd80,
-                        inset 0 0 30px #9d4edd40;
-                }
-
-                .corner-indicator {
-                    width: 20px;
-                    height: 20px;
-                    border: 3px solid #9d4edd;
-                    box-shadow: 0 0 10px #9d4edd;
-                }
-            </style>
-
-            <!-- Champ d'étoiles -->
-            <div class="starfield"></div>
-
-            <div class="min-h-screen bg-gray-900 text-white font-mono overflow-hidden scan-lines relative">
-                <div class="min-h-screen flex flex-col items-center justify-center p-4">
-
-                    <!-- Bouton retour -->
-                    <div class="absolute top-4 left-4">
-                        <button class="retro-button text-white font-bold py-2 px-6 rounded-lg transition-all duration-300" data-route="/server-game">
-                            ← RETOUR
-                        </button>
-                    </div>
-
-                    <!-- Titre du mode -->
-                    <h1 class="text-4xl font-bold neon-text mb-8 text-center">
-                        🤖 SERVER-SIDE SOLO (VS IA)
-                    </h1>
-
-                    <!-- Zone de jeu principale -->
-                    <div class="retro-panel rounded-lg p-6 shadow-2xl w-full max-w-4xl">
-                        <!-- Scores -->
-                        <div class="scoreboard-panel rounded-xl p-4 mb-4">
-                            <div class="flex justify-between items-center">
-                                <div id="scoreP1" class="text-2xl font-bold neon-text">Joueur 1 : 0</div>
-                                <div id="gameInfo" class="text-center">
-                                    <div id="countdowndisplay" class="text-3xl font-bold text-yellow-400 mb-2"></div>
-                                    <div class="text-sm text-purple-300">
-                                        <span id="connectionStatus">🔴 Déconnecté</span>
-                                        <span id="gameId" class="ml-4"></span>
-                                    </div>
-                                </div>
-                                <div id="scoreP2" class="text-2xl font-bold neon-text">IA : 0</div>
-                            </div>
-                        </div>
-
-                        <!-- Canvas de jeu -->
-                        <div class="flex justify-center">
-                            <div class="game-canvas-frame rounded-lg p-2 relative">
-                                <!-- Indicateurs de coin -->
-                                <div class="corner-indicator absolute top-0 left-0"></div>
-                                <div class="corner-indicator absolute top-0 right-0"></div>
-                                <div class="corner-indicator absolute bottom-0 left-0"></div>
-                                <div class="corner-indicator absolute bottom-0 right-0"></div>
-
-                                <canvas
-                                    id="gameCanvas"
-                                    width="800"
-                                    height="600"
-                                    class="rounded-lg bg-black"
-                                ></canvas>
-                            </div>
-                        </div>
-
-                        <!-- Contrôles -->
-                        <div class="mt-6 text-center">
-                            <div class="retro-panel rounded-lg p-4 inline-block">
-                                <h4 class="text-lg font-semibold neon-text mb-2">🎮 Contrôles</h4>
-                                <div class="text-sm text-purple-300">
-                                    <strong class="text-cyan-400">Joueur 1:</strong><br>
-                                    W = Haut | S = Bas
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Boutons de contrôle -->
-                        <div class="mt-6 text-center">
-                            <button id="restartBtn" class="retro-button text-yellow-300 font-bold py-3 px-6 rounded-lg transition-all duration-300 mr-4">
-                                <span class="relative z-10">🔄 REDÉMARRER</span>
-                            </button>
-                        </div>
-
-                        <!-- Message de fin -->
-                        <div id="endMessage" class="text-center text-3xl font-bold text-yellow-400 mt-6 hidden"></div>
-                    </div>
-                </div>
-            </div>
-        `;
+					<!-- Contrôles -->
+					<div class="bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm rounded-2xl p-6 mt-8">
+						<h3 class="text-xl font-bold text-purple-300 mb-4 text-center">
+							${i18n.t('game.control')}
+						</h3>
+						<div class="grid grid-cols-1 gap-4 text-center">
+							<div class="bg-black/95 border-2 border-purple-400 shadow-neon-purple-lg backdrop-blur-sm rounded-lg p-4 text-center">
+								<p class="text-purple-300 font-semibold">${i18n.t('game.p1')}</p>
+								<p class="text-sm text-gray-300">W / S</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		`;
 	}
 
 	async onMount(): Promise<void> {
-		console.log("🤖 Server Game Solo Page mounted");
+		////console.log("🤖 Server Game Solo Page mounted");
 
 		// ✅ PROTECTION CONTRE LES INSTANCES MULTIPLES
-		if (ServerGameSoloPage.isInstanceActive) {
-			console.log(
-				"⚠️ Instance already active, preventing duplicate creation"
-			);
+		if (ServerGameSoloPage.isInstanceActive)
+		{
+			////console.log("⚠️ Instance already active, preventing duplicate creation");
 			return; // Sortir immédiatement si une instance est déjà active
 		}
 
@@ -265,7 +115,7 @@ export class ServerGameSoloPage implements Page {
 
 		// ✅ PROTECTION CONTRE LES APPELS MULTIPLES
 		if (this.currentGame) {
-			console.log("⚠️ Game already exists, cleaning up first");
+			//console.log("⚠️ Game already exists, cleaning up first");
 			this.currentGame.disconnect();
 			this.currentGame = null;
 		}
@@ -292,23 +142,17 @@ export class ServerGameSoloPage implements Page {
 			ServerGameSoloPage.isInstanceActive = false; // Libérer le verrou en cas d'erreur
 		}
 
-		// Event listener pour le bouton restart
-		const restartBtn = document.getElementById("restartBtn");
-		if (restartBtn) {
-			this.restartListener = () => this.restartGame();
-			restartBtn.addEventListener("click", this.restartListener);
-		}
 	}
 
 	private async startSoloGame(): Promise<void> {
 		// ✅ VÉRIFICATION SUPPLÉMENTAIRE
 		if (this.currentGame) {
-			console.log("⚠️ Game already running, skipping creation");
+			//console.log("⚠️ Game already running, skipping creation");
 			return;
 		}
 
 		try {
-			console.log("🚀 Auto-starting server-side SOLO game...");
+			//console.log("🚀 Auto-starting server-side SOLO game...");
 
 			const connectionStatus =
 				document.getElementById("connectionStatus");
@@ -330,7 +174,7 @@ export class ServerGameSoloPage implements Page {
 				gameIdElement.textContent = `ID: ${this.currentGame.currentGameId}`;
 			}
 
-			console.log("✅ SERVER-SIDE SOLO GAME LAUNCHED!");
+			//console.log("✅ SERVER-SIDE SOLO GAME LAUNCHED!");
 		} catch (error) {
 			console.error("❌ Failed to start server-side solo game:", error);
 
@@ -353,41 +197,30 @@ export class ServerGameSoloPage implements Page {
 
 	private restartGame(): void {
 		if (this.currentGame) {
-			console.log("🔄 Restarting server-side solo game...");
+			//console.log("🔄 Restarting server-side solo game...");
 			this.currentGame.restart();
 		} else {
-			console.log("⚠️ No active game to restart, creating new one...");
+			//console.log("⚠️ No active game to restart, creating new one...");
 			this.startSoloGame();
 		}
 	}
 
-	private forceCleanup(): void {
-		console.log("🧹 Force cleanup of previous instance...");
-
-		// Supprimer les event listeners
-		if (this.navigationListener) {
-			document.removeEventListener("click", this.navigationListener);
-			this.navigationListener = null;
-		}
-
-		// Déconnecter le jeu existant
-		if (this.currentGame) {
-			this.currentGame.disconnect();
-			this.currentGame = null;
-		}
-
-		// Réinitialiser le flag
-		ServerGameSoloPage.isInstanceActive = false;
-	}
-
 	onUnmount(): void {
-		console.log("🤖 Server Game Solo Page unmounting");
+		//console.log("🤖 Server Game Solo Page unmounting");
 
 		// Supprimer les event listeners
 		if (this.navigationListener) {
 			document.removeEventListener("click", this.navigationListener);
 			this.navigationListener = null;
 		}
+
+		// if (this.restartListener) {
+		// 	const restartBtn = document.getElementById("restartBtn");
+		// 	if (restartBtn) {
+		// 		restartBtn.removeEventListener("click", this.restartListener);
+		// 	}
+		// 	this.restartListener = null;
+		// }
 
 		if (this.currentGame) {
 			this.currentGame.disconnect();
