@@ -104,15 +104,15 @@ cp .env.example .env
 
 ## Skills Developed
 
-- **DevOps Practices**: Production-ready deployment and monitoring strategies
+- **Infrastructure as Code & Containerization**: Proficient in Docker and Compose for container orchestration, enabling reproducible environments and scalable deployments
+- **Monitoring & Observability**: Set up advanced monitoring pipelines using Prometheu (metrics collection) and Grafana (dashboards & alerting) for real-time system insights and performance tuning
+- **Log Management with the ELK Stack**: Built centralized logging infrastructure using Elasticsearch, Logstash, and Kibana to enable fast debugging, root cause analysis, and security auditing
+- **Linux Systems & Scripting**: Solid experience managing Linux-based environments, with scripting (Bash) to automate operational tasks and streamline system maintenance
+- **Networking & Service Architecture**: Deep understanding of protocols (TCP/IP, HTTP, DNS), load balancing, and service discovery in distributed environments
+- **Incident Response & Recovery**: Implemented alerting systems and failover strategies to ensure system resilience and minimal downtime
+- **Team works**: Ability to work & collaborate with a team
 - **Modern Web Technologies**: Mastery of current industry-standard frameworks and tools
-- **Security Engineering**: Implementing enterprise-grade security measures
 - **UI/UX Design**: Creating intuitive, responsive user interfaces
-- **Full-Stack Engineering**: End-to-end application development and architecture
-- **Real-time System Design**: Building responsive, low-latency multiplayer experiences
-- **Database Engineering**: Advanced SQL, optimization, and data modeling
-- **Project Management**: Coordinating complex, multi-module development
-
 
 ## Project Overview
 
